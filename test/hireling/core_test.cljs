@@ -5,3 +5,7 @@
 (deftest a-test
   (testing "FIXME, I fail."
     (is (= 1 1))))
+
+(deftest promise-converter
+  (testing "Converter that takes a js promise and turns it into a core.async channel."
+    (is nil)))
