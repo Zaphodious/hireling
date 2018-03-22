@@ -10,4 +10,5 @@ pom.xml.asc
 /.idea
 .hgignore
 *.iml
+hireling.iml
 .hg/
