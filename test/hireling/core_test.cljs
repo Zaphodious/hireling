@@ -8,4 +8,5 @@
 
 (deftest promise-converter
   (testing "Converter that takes a js promise and turns it into a core.async channel."
-    (is nil)))
+    (is (let [a (js/Promise.)]
+          (hc/wrap-promise {:promise a})))))

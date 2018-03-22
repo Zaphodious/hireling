@@ -9,8 +9,8 @@
   :plugins [[lein-cljsbuild "1.1.7"]
             [lein-doo "0.1.9"]]
   :doo {:paths {:rhino "lein run -m org.mozilla.javascript.tools.shell.Main"}}
-  :aliases {"test" ["with-profile" "test" "doo" "rhino" "test" "auto"]
-            "test-once" ["with-profile" "test" "doo" "rhino" "test" "auto"]}
+  :aliases {"test" ["with-profile" "test" "doo" "chrome" "test" "auto"]
+            "test-once" ["with-profile" "test" "doo" "chrome" "test" "auto"]}
   :profiles
   {:test {:dependencies [[org.mozilla/rhino "1.7.9"]]
           :cljsbuild
