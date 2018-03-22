@@ -1,4 +1,5 @@
-(ns hireling.core)
+(ns hireling.core
+  (:require [clojure.core.async :as async]))
 
 (defn foo
   "I don't do a whole lot."
@@ -6,4 +7,11 @@
   (println x "Hello, World!"))
 
 (defn wrap-promise [{:keys [promise event-translator] :or {event-translator (fn [a] a)}}]
-  (let [callback-success (fn [a] (event-translator a))]))
+  (let [resolved-promise (.resolve js/Promise promise)
+        return-chan (async/chan)]
+    (.. promise
+        (then (fn [a]
+                (println "resolved promise as " a)
+                (async/go
+                  (async/>! return-chan (event-translator a))))))
+    return-chan))
