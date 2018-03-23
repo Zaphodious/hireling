@@ -13,7 +13,7 @@
   (testing "That wrap-promise returns a channel when given a promise."
     (let [test-value "It is 42"
           test-promise (.resolve js/Promise test-value)
-          successful-chan (hc/promise->chan! {:promise test-promise})]
+          successful-chan (hc/promise->chan! test-promise)]
 
       (is (satisfies? async-prot/ReadPort successful-chan)))))
 
@@ -21,7 +21,7 @@
   (testing "That the channel returned by wrap-promise gets the proper value when resolved"
     (let [test-value "It is 42"
           test-promise (.resolve js/Promise test-value)
-          successful-chan (hc/promise->chan! {:promise test-promise})]
+          successful-chan (hc/promise->chan! test-promise)]
       (test/async done
         (let [equaltest (fn [a]
                           (println "succeeds with a " a)
@@ -37,7 +37,7 @@
       (test/async done
         (let [equaltest (fn [a] (is (= reject-response-value a))
                           (done))]
-          (async/take! (hc/promise->chan! {:promise (.reject js/Promise reject-value)}) equaltest))))))
+          (async/take! (hc/promise->chan! (.reject js/Promise reject-value)) equaltest))))))
 
 (deftest chan-to-promise-returns-promise
   (testing "That chan->promise! returns a promise"
@@ -85,3 +85,18 @@
             (.then (fn [a] (is (= test-data a)
                                (done))))))
       (async/go (async/>! starting-chan test-data)))))
+
+(deftest cache-initializer-returns-chan
+  (testing "That the cache initializer returns a channel."
+    (is (satisfies? async-prot/ReadPort (hc/open-cache "Hi")))))
+
+(deftest cache-initializers-chan-gets-a-cache
+  (testing "That the channel returned by open-cache gets a cache object."
+    (test/async done
+      (async/go
+        (let [cache? (async/<! (hc/open-cache "Hi!"))]
+          (println "the thing bot back is " cache?)
+          (is (and (.put cache?)
+                   (.match cache?)
+                   (.matchAll cache?)))
+          (done))))))

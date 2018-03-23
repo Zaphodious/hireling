@@ -6,14 +6,14 @@
   [x]
   (println x "Hello, World!"))
 
-(defn promise->chan! [{:keys [promise event-translator] :or {event-translator (fn [a] a)}}]
+(defn promise->chan! [promise]
   (let [resolved-promise (.resolve js/Promise promise)
         return-chan (async/chan)]
     (-> promise
         (.then (fn [a]
                 (println "resolved promise as " a)
                 (async/go
-                  (async/>! return-chan (event-translator a))))
+                  (async/>! return-chan a)))
                (fn [e]
                  (println "promise rejects to " e)
                  (async/go
@@ -34,3 +34,6 @@
   "Creates a map that can be used by hireling's Service Worker lifecycle handler."
   [provided-impl-map]
   (into default-hireling provided-impl-map))
+
+(defn open-cache [cache-name]
+  (promise->chan! (.open js/caches cache-name)))
