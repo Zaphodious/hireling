@@ -25,3 +25,12 @@
                  (async/go
                    (let [chan-response (async/<! chano)]
                      (resolve chan-response))))))
+
+(def default-hireling {:version 1
+                       :cache-name "hireling-cache"
+                       :cached-paths [""]})
+
+(defn make-hireling
+  "Creates a map that can be used by hireling's Service Worker lifecycle handler."
+  [provided-impl-map]
+  (into default-hireling provided-impl-map))
