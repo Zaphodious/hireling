@@ -6,7 +6,7 @@
   [x]
   (println x "Hello, World!"))
 
-(defn wrap-promise! [{:keys [promise event-translator] :or {event-translator (fn [a] a)}}]
+(defn promise->chan! [{:keys [promise event-translator] :or {event-translator (fn [a] a)}}]
   (let [resolved-promise (.resolve js/Promise promise)
         return-chan (async/chan)]
     (-> promise
@@ -19,3 +19,9 @@
                  (async/go
                    (async/>! return-chan {:type :rejection :reason e})))))
     return-chan))
+
+(defn chan->promise! [chano]
+  (js/Promise. (fn [resolve, reject]
+                 (async/go
+                   (let [chan-response (async/<! chano)]
+                     (resolve chan-response))))))
