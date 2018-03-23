@@ -13,9 +13,9 @@
         (.then (fn [a]
                 (println "resolved promise as " a)
                 (async/go
-                  (async/>! return-chan (event-translator a))))
+                  (async/>! return-chan (event-translator {:type :success :value a}))))
                (fn [e]
                  (println "promise rejects to " e)
                  (async/go
-                   (async/>! return-chan e)))))
+                   (async/>! return-chan {:type :rejection :reason e})))))
     return-chan))
