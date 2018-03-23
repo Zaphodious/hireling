@@ -20,14 +20,12 @@
 (deftest promise-wrapper-reads
   (testing "That the channel returned by wrap-promise gets the proper value when resolved"
     (let [test-value "It is 42"
-          test-response-value {:type :success
-                               :value test-value}
           test-promise (.resolve js/Promise test-value)
           successful-chan (hc/promise->chan! {:promise test-promise})]
       (test/async done
         (let [equaltest (fn [a]
                           (println "succeeds with a " a)
-                          (is (= test-response-value a))
+                          (is (= test-value a))
                           (done))]
           (async/take! successful-chan equaltest))))))
 
@@ -59,3 +57,31 @@
                     (is (= test-data a))
                     (done))))
         (async/go (async/>! test-chan test-data))))))
+
+(deftest promise-chan-round-trip
+  (testing "That the promise/chan converters go back and forth without signal loss."
+    (let [starting-chan (async/chan)
+          test-data "MAN was that tunnel was dark!"]
+      (test/async done
+        (-> starting-chan
+            (hc/chan->promise!)
+            (hc/promise->chan!)
+            (hc/chan->promise!)
+            (hc/promise->chan!)
+            (hc/chan->promise!)
+            (hc/promise->chan!)
+            (hc/chan->promise!)
+            (hc/promise->chan!)
+            (hc/chan->promise!)
+            (hc/chan->promise!)
+            (hc/promise->chan!)
+            (hc/chan->promise!)
+            (hc/promise->chan!)
+            (hc/chan->promise!)
+            (hc/promise->chan!)
+            (hc/chan->promise!)
+            (hc/promise->chan!)
+            (hc/chan->promise!)
+            (.then (fn [a] (is (= test-data a)
+                               (done))))))
+      (async/go (async/>! starting-chan test-data)))))
