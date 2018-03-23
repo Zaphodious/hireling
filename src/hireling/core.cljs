@@ -6,12 +6,16 @@
   [x]
   (println x "Hello, World!"))
 
-(defn wrap-promise [{:keys [promise event-translator] :or {event-translator (fn [a] a)}}]
+(defn wrap-promise! [{:keys [promise event-translator] :or {event-translator (fn [a] a)}}]
   (let [resolved-promise (.resolve js/Promise promise)
         return-chan (async/chan)]
-    (.. promise
-        (then (fn [a]
+    (-> promise
+        (.then (fn [a]
                 (println "resolved promise as " a)
                 (async/go
-                  (async/>! return-chan (event-translator a))))))
+                  (async/>! return-chan (event-translator a))))
+               (fn [e]
+                 (println "promise rejects to " e)
+                 (async/go
+                   (async/>! return-chan e)))))
     return-chan))
