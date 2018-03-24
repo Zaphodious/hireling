@@ -3,7 +3,8 @@
             [cljs.core.async :as async]
             [cljs.core.async.impl.protocols :as async-prot]
             [hireling.core :as hc]
-            [cljs.test :as test]))
+            [cljs.test :as test]
+            [clojure.walk :as walk]))
 
 (deftest a-test
   (testing "FIXME, I fail."
@@ -100,3 +101,48 @@
                    (.match cache?)
                    (.matchAll cache?)))
           (done))))))
+
+(deftest header-converter-makes-round-trip
+  (testing "That the header converter functions are reversible"
+    (let [test-headers {:foo "too"
+                        :this "that"
+                        :answer "42"}
+          converted (hc/map->headers test-headers)
+          round-tripped (hc/headers->map converted)]
+      (is (= test-headers round-tripped)))))
+
+(deftest request-converter-gets-a-map
+  (testing "That request->map returns a map with the relevant properties expressed in EDN"
+    (let [test-url "https://www.google.com/"
+          test-method "GET"
+          requi (js/Request. test-url)
+          req-map (hc/request->map requi)]
+      (is (and (= (:url req-map) test-url)
+               (= (:method req-map) test-method))))))
+
+(deftest map-to-request-returns-proper-request
+  (testing "That map->request returns a request with the specified properties."
+    (let [test-map {:url "https://www.google.com/"
+                    :method "PUT"
+                    :headers {:foo "too"}
+                    :cache "no-cache"}
+          requi (hc/map->request test-map)]
+      (println "headers are " (walk/keywordize-keys (into {} (map vec (es6-iterator-seq (.entries (.-headers requi)))))))
+      (is (and (= (.-url requi) (:url test-map))
+               (= (.-method requi) (:method test-map))
+               (= (.-cache requi) (:cache test-map))
+               (= (hc/headers->map (.-headers requi))
+                  (:headers test-map)))))))
+
+(deftest request-converter-functions-round-trip
+  (testing "That map->request and request->map are reversible"
+    (let [initial-request (js/Request. "https://www.google.com/" (clj->js {:method "PUT" :cache "reload"
+                                                                           :headers {:thing "hello"
+                                                                                     :content-type "text/html;charset=UTF-8"}}))
+          round-tripped-request (-> initial-request
+                                    (hc/request->map)
+                                    (hc/map->request)
+                                    (hc/request->map)
+                                    (hc/map->request))]
+      (is (= (hc/request->map initial-request)
+             (hc/request->map round-tripped-request))))))

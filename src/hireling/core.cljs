@@ -1,5 +1,6 @@
 (ns hireling.core
-  (:require [clojure.core.async :as async]))
+  (:require [clojure.core.async :as async]
+            [clojure.walk :as walk]))
 
 (defn foo
   "I don't do a whole lot."
@@ -37,3 +38,30 @@
 
 (defn open-cache [cache-name]
   (promise->chan! (.open js/caches cache-name)))
+
+(defn headers->map [headers-object]
+  (walk/keywordize-keys (into {} (map vec (es6-iterator-seq (.entries headers-object))))))
+
+(defn map->headers [headers-map]
+  (js/Headers. (clj->js headers-map)))
+
+(defn request->map [request-object]
+  (let [req-bak (.clone request-object)]
+    {:method          (.-method request-object)
+     :url             (.-url request-object)
+     :headers         (headers->map (.-headers request-object))
+     :context         (.-context request-object)
+     :referrer        (.-referrer request-object)
+     :referrer-policy (.-referrerPolicy request-object)
+     :mode            (.-mode request-object)
+     :credentials     (.-credentials request-object)
+     :redirect        (.-redirect request-object)
+     :integrity       (.-integrity request-object)
+     :cache           (.-cache request-object)
+     :body            (.-body request-object)
+     :body-used       (.-bodyUsed request-object)}))
+
+(defn map->request [{:keys [url headers] :as request-map}]
+  (js/Request. url (clj->js (-> request-map
+                                (dissoc :url)
+                                (assoc :headers (map->headers headers))))))
