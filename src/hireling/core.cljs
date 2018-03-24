@@ -65,3 +65,17 @@
   (js/Request. url (clj->js (-> request-map
                                 (dissoc :url)
                                 (assoc :headers (map->headers headers))))))
+
+(defn response->map! [response-object]
+  (let [resp-bak (.clone response-object)]
+    {:url           (.-url response-object)
+     :headers       (headers->map (.-headers response-object))
+     :status        (.-status response-object)
+     :ok            (.-ok response-object)
+     :status-text   (.-statusText response-object)
+     :referrer      (.-referrer response-object)
+     :type          (.-type response-object)
+     :redirected    (.-redirected response-object)
+     :use-final-url (.-useFinalURL response-object)
+     :body          (.-body response-object)
+     :body-used     (.-bodyUsed response-object)}))

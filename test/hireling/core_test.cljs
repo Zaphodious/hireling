@@ -136,9 +136,11 @@
 
 (deftest request-converter-functions-round-trip
   (testing "That map->request and request->map are reversible"
-    (let [initial-request (js/Request. "https://www.google.com/" (clj->js {:method "PUT" :cache "reload"
-                                                                           :headers {:thing "hello"
-                                                                                     :content-type "text/html;charset=UTF-8"}}))
+    (let [initial-request (js/Request.
+                            "https://www.google.com/"
+                            (clj->js {:method "PUT" :cache "reload"
+                                      :headers {:thing "hello"
+                                                :content-type "text/html;charset=UTF-8"}}))
           round-tripped-request (-> initial-request
                                     (hc/request->map)
                                     (hc/map->request)
@@ -146,3 +148,24 @@
                                     (hc/map->request))]
       (is (= (hc/request->map initial-request)
              (hc/request->map round-tripped-request))))))
+
+(deftest response-converter-returns-map
+  (testing "That response->map returns a map"
+    (is (map? (hc/response->map! (js/Response. (pr-str {:thing "another" :answer 42})))))))
+
+(deftest response-converter-captures-correct-data
+  (testing "That response->map's map contain correct values"
+    (let [sample-status-text "Passed!"
+          sample-status 200
+          sample-body (pr-str {:thing "another" :answer 42})
+          sample-headers {:foo "bar"
+                          :thing "another"}
+          sample-init {:statusText sample-status-text
+                       :status sample-status
+                       :foo "bar"
+                       :headers sample-headers}
+          converted-map (hc/response->map! (js/Response.
+                                             sample-body (clj->js sample-init)))]
+      (is (or (= (:status converted-map) sample-status)
+              (= (:status-text converted-map) sample-status-text)
+              (= (:headers sample-headers)))))))
