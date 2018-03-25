@@ -61,7 +61,7 @@
      :body            (.-body request-object)
      :body-used       (.-bodyUsed request-object)}))
 
-(defn map->request [{:keys [url headers] :as request-map}]
+(defn map->request [{:keys [url headers] :as request-map :or {headers {}, url "/"}}]
   (js/Request. url (clj->js (-> request-map
                                 (dissoc :url)
                                 (assoc :headers (map->headers headers))))))
@@ -80,7 +80,9 @@
      :body          (.-body response-object)
      :body-used     (.-bodyUsed response-object)}))
 
-(defn map->response! [{:keys [body headers] :as response-map}]
+(defn map->response! [{:keys [body headers] :as response-map :or {headers {}, body ""}}]
+  (println "the headers are " headers)
   (js/Response. body (-> response-map
                          (dissoc :body)
-                         (assoc :headers (map->headers headers)))))
+                         (assoc :headers (map->headers headers))
+                         clj->js)))
