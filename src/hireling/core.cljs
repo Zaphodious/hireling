@@ -79,3 +79,8 @@
      :use-final-url (.-useFinalURL response-object)
      :body          (.-body response-object)
      :body-used     (.-bodyUsed response-object)}))
+
+(defn map->response! [{:keys [body headers] :as response-map}]
+  (js/Response. body (-> response-map
+                         (dissoc :body)
+                         (assoc :headers (map->headers headers)))))

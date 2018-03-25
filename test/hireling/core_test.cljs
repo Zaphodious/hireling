@@ -166,6 +166,18 @@
                        :headers sample-headers}
           converted-map (hc/response->map! (js/Response.
                                              sample-body (clj->js sample-init)))]
-      (is (or (= (:status converted-map) sample-status)
-              (= (:status-text converted-map) sample-status-text)
-              (= (:headers sample-headers)))))))
+      (is (and (= (:status converted-map) sample-status)
+               (= (:status-text converted-map) sample-status-text)
+               (= (:headers sample-headers)))))))
+
+(deftest map-to-response-constructs-response-correctly
+  (testing "That map->response constructs a response correctly."
+    (let [sample-status-text "Yes, did it"
+          sample-status 201
+          sample-body (pr-str {:whatever "floats" :your [\b\o\a\t]})
+          sample-param {:statusText sample-status-text
+                        :status sample-status
+                        :body sample-body}
+          constructed-response (hc/map->response! sample-param)]
+      (println "response is " constructed-response)
+      (is (and (= (.-status constructed-response) sample-status))))))
