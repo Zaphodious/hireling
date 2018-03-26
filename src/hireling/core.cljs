@@ -89,3 +89,7 @@
 
 (.. (js/fetch "http://localhost:9876/" (clj->js {:mode "no-cors"}))
     (then (fn [a] (println "Zombo is " (response->map! a)))))
+
+(defn register-worker [worker-file-path]
+  (when (-.serviceWorker js/navigator)
+    (.. js/navigator -serviceWorker (register worker-file-path))))
