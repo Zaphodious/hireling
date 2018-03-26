@@ -6,6 +6,8 @@ A ClojureScript library for working with service workers.
 
 ## Usage
 
+[![Clojars Project](https://img.shields.io/clojars/v/hireling.svg)](https://clojars.org/hireling)
+
 FIXME
 
 ## License
