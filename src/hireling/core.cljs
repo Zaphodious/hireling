@@ -29,15 +29,20 @@
 
 (def default-hireling {:version 1
                        :cache-name "hireling-cache"
-                       :cached-paths [""]})
+                       :cached-paths [""]
+                       :on-install! (fn [a] a)})
 
-(defn make-hireling
-  "Creates a map that can be used by hireling's Service Worker lifecycle handler."
+(defn start-service-worker!
+  "Starts the service worker with the provided options map."
   [provided-impl-map]
-  (into default-hireling provided-impl-map))
-
-(defn open-cache [cache-name]
-  (promise->chan! (.open js/caches cache-name)))
+  (enable-console-print!)
+  (let [{:keys [on-install!] :as combined-impl-map} (into default-hireling provided-impl-map)
+        [install-event-chan] (take 1 (repeatedly #(async/chan)))]
+    (.addEventListener
+      js/self "install"
+      (fn [ev]
+        (async/go (async/>! install-event-chan (on-install!)))
+        (.waitUntil ev (chan->promise! install-event-chan))))))
 
 (defn headers->map [headers-object]
   (walk/keywordize-keys (into {} (map vec (es6-iterator-seq (.entries headers-object))))))
@@ -87,6 +92,8 @@
                          (assoc :headers (map->headers headers))
                          clj->js)))
 
+
 (defn register-worker [worker-file-path]
   (when (.-serviceWorker js/navigator)
     (.. js/navigator -serviceWorker (register worker-file-path))))
+
