@@ -4,7 +4,7 @@
 in the party. Whether you’re looking to hire a few meat shields or trying
 to ensure that you have a vital role covered in a smaller-than-average
 party, hirelings are a way to shore things up a bit.
-
+>
 > Hirelings are designed to be simple and to get out of the way when you
 don’t need them. You only have to worry about a few things.
 
