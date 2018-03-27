@@ -1,6 +1,7 @@
 (ns hireling.client
   (:require [rum.core :as rum]
-    [hireling.core :as hireling]))
+            [hireling.test-runner :as tester]
+            [hireling.core :as hireling]))
 
 (enable-console-print!)
 
@@ -13,9 +14,7 @@
 (hireling/register-worker "worker.js")
 
 (rum/defc hello-world []
-          [:div
-           [:h1 (:text @app-state)]
-           [:h3 "Edit this and watch it change!"]])
+  (tester/testing-demo))
 
 (rum/mount (hello-world)
            (. js/document (getElementById "app")))

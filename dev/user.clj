@@ -46,7 +46,7 @@
                     :incremental  true
                     :compiler     {:optimizations  :whitespace
                                    :cache-analysis true
-                                   :pretty-print   true
+                                   :pretty-print   false
                                    :warnings       true
                                    :main           "hireling.client"}}}))
 
@@ -63,7 +63,7 @@
                     :incremental  true
                     :compiler     {:optimizations  :whitespace
                                    :cache-analysis true
-                                   :pretty-print   true
+                                   :pretty-print   false
                                    :warnings       true
                                    :target         :webworker
                                    :main           "hireling.worker"}}}))
