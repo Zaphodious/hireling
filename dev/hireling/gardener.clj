@@ -19,6 +19,7 @@
 (def wait-color (color/from-name :purple))
 (def test-coll-color-pass (color/from-name :forestgreen))
 (def test-coll-color-fail (color/from-name :firebrick))
+(def test-coll-color-wait (color/from-name :darkviolet))
 
 (def styledec [:html {:background-color :black}
                [:* {:font-family "sans-serif"}]
@@ -29,6 +30,8 @@
                              :box-shadow (make-seq-shadow test-coll-color-pass)}]
                 [:&.failing {:background-color (make-seq-background-color test-coll-color-fail)
                              :box-shadow (make-seq-shadow test-coll-color-fail)}]
+                [:&.waiting {:background-color (make-seq-background-color test-coll-color-wait)
+                             :box-shadow (make-seq-shadow test-coll-color-wait)}]
                 [:h3 {:padding 0
                       :margin :7px
                       :font-size :2em}]
