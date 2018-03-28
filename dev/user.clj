@@ -44,7 +44,7 @@
      :source-map   true
      :cljsbuild    {:source-paths ["src" "client-test"]
                     :incremental  true
-                    :compiler     {:optimizations  :simple
+                    :compiler     {:optimizations  :whitespace
                                    :cache-analysis true
                                    :pretty-print   false
                                    :warnings       true
@@ -61,7 +61,7 @@
      :source-map   true
      :cljsbuild    {:source-paths ["src" "worker-test"]
                     :incremental  true
-                    :compiler     {:optimizations  :simple
+                    :compiler     {:optimizations  :whitespace
                                    :cache-analysis true
                                    :pretty-print   false
                                    :warnings       true
