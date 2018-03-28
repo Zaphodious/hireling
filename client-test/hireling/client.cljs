@@ -15,7 +15,8 @@
 (hireling/register-worker "worker.js")
 
 (rum/defc hello-world []
-  (tester/tests-on client-tests/promise-tests))
+  [(map tester/tests-on client-tests/all-tests)
+   (tester/doctor-heal-thyself)])
 
 (rum/mount (hello-world)
            (. js/document (getElementById "app")))

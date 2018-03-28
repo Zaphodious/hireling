@@ -74,7 +74,7 @@
         results (map #(assoc % :testing on) results-pre-insert)]
     (render-test-category (assoc test-decs :results results))))
 
-(defn testing-demo []
+(defn doctor-heal-thyself []
   (tests-on {:on    "The Error System"
              :tests [{:aspect       "shows errors"
                       :should-be    0
