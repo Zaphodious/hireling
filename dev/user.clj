@@ -16,7 +16,7 @@
    [:body
     [:div {:id "app"}
      [:h2 "Pre-JS Template"]]
-    [:script {:src "/main.js" :type "text/javascript"}]]])
+    [:script {:src "/js/main.js" :type "text/javascript"}]]])
 
 (defn index-handler [request]
   {:status  200
@@ -36,7 +36,7 @@
 (defn main-js-builder [handler-fn]
   (ring-cljs/wrap-cljsbuild
     handler-fn
-    ""
+    "/js/"
     {:id           :main-js
      :auto         true
      :java-logging false
@@ -44,7 +44,7 @@
      :source-map   true
      :cljsbuild    {:source-paths ["src" "client-test"]
                     :incremental  true
-                    :compiler     {:optimizations  :whitespace
+                    :compiler     {:optimizations  :none
                                    :cache-analysis true
                                    :pretty-print   false
                                    :warnings       true
@@ -61,7 +61,7 @@
      :source-map   true
      :cljsbuild    {:source-paths ["src" "worker-test"]
                     :incremental  true
-                    :compiler     {:optimizations  :whitespace
+                    :compiler     {:optimizations  :none
                                    :cache-analysis true
                                    :pretty-print   false
                                    :warnings       true
@@ -71,8 +71,9 @@
 
 
 (def handler
-  (bring/make-handler ["" {"/main.js"   (main-js-builder handler)
+  (bring/make-handler ["" {"/js/"   {true (main-js-builder handler)}
                            "/worker.js" (worker-js-builder handler)
+                           "/out/"   {true (worker-js-builder handler)}
                            "/"          {#{"" "index.html"} index-handler
                                          "style.css"        style-handler}}]))
 

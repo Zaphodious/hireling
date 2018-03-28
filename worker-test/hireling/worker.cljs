@@ -2,4 +2,4 @@
 
 (enable-console-print!)
 
-(println "Service Worker installs baby!")
+(println "Service Worker installs my friend!")
