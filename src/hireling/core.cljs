@@ -2,47 +2,25 @@
   (:require [clojure.core.async :as async]
             [clojure.walk :as walk]))
 
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
-
 (defn promise->chan! [promise]
   (let [resolved-promise (.resolve js/Promise promise)
         return-chan (async/chan)]
     (-> promise
         (.then (fn [a]
-                (println "resolved promise as " a)
                 (async/go
                   (async/>! return-chan a)))
                (fn [e]
-                 (println "promise rejects to " e)
                  (async/go
-                   (async/>! return-chan {:type :rejection :reason e})))))
+                   (async/>! return-chan {::rejection e})))))
     return-chan))
 
 (defn chan->promise! [chano]
   (js/Promise. (fn [resolve, reject]
                  (async/go
                    (let [chan-response (async/<! chano)]
-                     (resolve chan-response))))))
-
-(def default-hireling {:version 1
-                       :cache-name "hireling-cache"
-                       :cached-paths [""]
-                       :on-install! (fn [a] a)})
-
-(defn start-service-worker!
-  "Starts the service worker with the provided options map."
-  [provided-impl-map]
-  (enable-console-print!)
-  (let [{:keys [on-install!] :as combined-impl-map} (into default-hireling provided-impl-map)
-        [install-event-chan] (take 1 (repeatedly #(async/chan)))]
-    (.addEventListener
-      js/self "install"
-      (fn [ev]
-        (async/go (async/>! install-event-chan (on-install!)))
-        (.waitUntil ev (chan->promise! install-event-chan))))))
+                     (if (::rejection chan-response)
+                       (reject (::rejection chan-response))
+                       (resolve chan-response)))))))
 
 (defn headers->map [headers-object]
   (walk/keywordize-keys (into {} (map vec (es6-iterator-seq (.entries headers-object))))))
@@ -92,8 +70,34 @@
                          (assoc :headers (map->headers headers))
                          clj->js)))
 
+(defn fetch [url-string]
+  (let [scope (if js/window js/window js/WorkerGlobalScope)
+        fetch-chan (promise->chan! (js/fetch url-string))
+        return-chan (async/chan)]
+    (async/go
+      (let [response (async/<! fetch-chan)]
+        (response->map! response)))))
 
 (defn register-worker [worker-file-path]
   (when (.-serviceWorker js/navigator)
     (.. js/navigator -serviceWorker (register worker-file-path))))
 
+(def default-worker {:version        1
+                     :cache-name   "hireling-cache"
+                     :cached-paths [""]
+                     :on-install!  (fn [{:keys [event done-chan]}]
+                                     (println "No install declared for this service worker.")
+                                     (async/put! done-chan event))})
+
+(defn start-service-worker!
+  "Starts the service worker with the provided options map."
+  [provided-impl-map]
+  (enable-console-print!)
+  (let [[install-done-chan] (take 1 (repeatedly #(async/chan)))
+        {:keys [on-install!] :as combined-impl-map} (into default-worker provided-impl-map)]
+
+    (.addEventListener
+      js/self "install"
+      (fn [ev]
+        (async/go (on-install! (into combined-impl-map {:event ev :done-chan install-done-chan})))
+        (.waitUntil ev (chan->promise! install-done-chan))))))

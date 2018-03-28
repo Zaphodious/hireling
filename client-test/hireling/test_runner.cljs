@@ -40,7 +40,9 @@
                                                                                   (pr-str result)))]
                    (when error
                      (do
-                       (println (.-stack error))
+                       (*print-err-fn*
+                         (str "Error caught in " testing " " aspect "\n")
+                         (.-stack error))
                        (.-stack error)))]])]]))
 
 (rum/defc render-test-category < rum/reactive

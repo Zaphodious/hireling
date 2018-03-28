@@ -24,30 +24,42 @@
                                            (is (= test-value a)))]
                            (async/take! successful-chan equaltest))))}
            {:aspect  "returns a channel that deals with rejection"
+            :should-be {::hc/rejection "Because I said so."}
             :test-fn (fn [is]
-                       (let [reject-value "Because I said so."
-                             reject-response-value {:type   :rejection
-                                                    :reason reject-value}]
-                         (let [equaltest (fn [a] (is (= reject-response-value a)))]
+                       (let [reject-value "Because I said so."]
+                         (let [equaltest (fn [a] (is a))]
                            (async/take! (hc/promise->chan! (.reject js/Promise reject-value)) equaltest))))}]})
 
 (def chan->promise-tests
-  {:on "chan->promise!"
-   :tests [{:aspect "returns a promise"
+  {:on    "chan->promise!"
+   :tests [{:aspect  "returns a promise"
             :test-fn (fn [is]
                        (let [test-chan (async/chan)
                              converted-promise (hc/chan->promise! test-chan)
                              should-equal-converted (.resolve js/Promise converted-promise)]
                          (is (= converted-promise should-equal-converted))))}
-           {:aspect "returns a promise that correctly resolves"
+           {:aspect  "returns a promise that correctly resolves"
             :test-fn (fn [is]
                        (let [test-chan (async/chan)
                              converted-promise (hc/chan->promise! test-chan)
                              test-data "Answer is 42"]
                          (.. converted-promise
-                              (then (fn [a]
-                                      (is (= test-data a)))))
-                         (async/go (async/>! test-chan test-data))))}]})
+                             (then (fn [a]
+                                     (is (= test-data a)))))
+                         (async/go (async/>! test-chan test-data))))}
+           {:aspect    "returns a promise that correctly rejects"
+            :should-be "That's what the doctor ordered."
+            :test-fn   (fn [is]
+                         (let [test-chan (async/chan)
+                               converted-promise (hc/chan->promise! test-chan)
+                               failtest (fn [a] (is "The promise didn't reject!"))
+                               equaltest (fn [a] (is a))]
+                           (.. converted-promise
+                               (then
+                                 failtest
+                                 equaltest))
+                           (async/put! test-chan {::hc/rejection "That's what the doctor ordered."})))}]})
+
 
 (def chan->promise->chan-tests
   {:on "chan->promise! and promise->chan!"
@@ -76,7 +88,38 @@
                              (hc/promise->chan!)
                              (hc/chan->promise!)
                              (.then (fn [a] (is (= test-data a)))))
-                         (async/go (async/>! starting-chan test-data))))}]})
+                         (async/go (async/>! starting-chan test-data))))}
+           {:aspect "fail cascades correctly."
+            :should-be "I hit every branch on the way down."
+            :test-fn (fn [is]
+                       (let [starting-chan (async/chan)
+                             test-data "I hit every branch on the way down."
+                             fail-fn (fn [a] (is "The promise/chan stack didn't reject."))
+                             pass-fn #(is %)]
+                         (-> starting-chan
+                             (hc/chan->promise!)
+                             (hc/promise->chan!)
+                             (hc/chan->promise!)
+                             (hc/promise->chan!)
+                             (hc/chan->promise!)
+                             (hc/promise->chan!)
+                             (hc/chan->promise!)
+                             (hc/promise->chan!)
+                             (hc/chan->promise!)
+                             (hc/promise->chan!)
+                             (hc/chan->promise!)
+                             (hc/promise->chan!)
+                             (hc/chan->promise!)
+                             (hc/promise->chan!)
+                             (hc/chan->promise!)
+                             (hc/promise->chan!)
+                             (hc/chan->promise!)
+                             (hc/promise->chan!)
+                             (hc/chan->promise!)
+                             (.then
+                               fail-fn
+                               pass-fn))
+                         (async/go (async/>! starting-chan {::hc/rejection test-data}))))}]})
 
 (def header-converter-tests
   {:on "map->headers and headers->map"
@@ -168,16 +211,29 @@
                              constructed-response (hc/map->response! sample-param)]
                          (println "response is " constructed-response)
                          (is (and (= (.-status constructed-response) sample-status)))))}]})
+(def simple-text-url "/simple.txt")
 
+(def fetch-tests
+  {:on "hireling.core/fetch"
+   :tests [{:aspect "properly returns a chan."
+            :testing-args [simple-text-url]
+            :test-fn (fn [is stu]
+                       (is (satisfies? async-prot/ReadPort (hc/fetch stu))))}
+           {:aspect "chan gets proper file."
+            :should-be "I'm from a server!"
+            :testing-args [simple-text-url]
+            :test-fn (fn [is stu]
+                       (async/take! (hc/fetch stu) (fn [a] (is a))))}]})
 
 
 (def all-tests
-  [map->response-tests
+  [fetch-tests
+   map->response-tests
    response->map-tests
    map->request->map-tests
    map->request-tests
    request->map-tests
    header-converter-tests
+   chan->promise->chan-tests
    promise->chan-tests
-   chan->promise-tests
-   chan->promise->chan-tests])
+   chan->promise-tests])

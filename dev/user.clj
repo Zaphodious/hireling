@@ -33,6 +33,11 @@
    :headers {"Content-type" "text/css"}
    :body    "?"})
 
+(defn simple-txt-handler [request]
+  {:status  200
+   :headers {"Content-type" "text/plain"}
+   :body    "I'm from a server!"})
+
 (defn main-js-builder [handler-fn]
   (ring-cljs/wrap-cljsbuild
     handler-fn
@@ -71,11 +76,12 @@
 
 
 (def handler
-  (bring/make-handler ["" {"/js/"   {true (main-js-builder handler)}
+  (bring/make-handler ["" {"/js/"       {true (main-js-builder handler)}
                            "/worker.js" (worker-js-builder handler)
-                           "/out/"   {true (worker-js-builder handler)}
+                           "/out/"      {true (worker-js-builder handler)}
                            "/"          {#{"" "index.html"} index-handler
-                                         "style.css"        style-handler}}]))
+                                         "style.css"        style-handler
+                                         "simple.txt"       simple-txt-handler}}]))
 
 
 
