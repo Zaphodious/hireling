@@ -78,9 +78,106 @@
                              (.then (fn [a] (is (= test-data a)))))
                          (async/go (async/>! starting-chan test-data))))}]})
 
+(def header-converter-tests
+  {:on "map->headers and headers->map"
+   :tests [{:aspect "are reversible"
+            :test-fn (fn [is]
+                       (let [test-headers {:foo "too"
+                                           :this "that"
+                                           :answer "42"}
+                             converted (hc/map->headers test-headers)
+                             round-tripped (hc/headers->map converted)]
+                         (is (= test-headers round-tripped))))}]})
+
+(def request->map-tests
+  {:on "request->map"
+   :tests [{:aspect "returns a map with the relevant properties expressed in EDN"
+            :test-fn (fn [is]
+                       (let [test-url "https://www.google.com/"
+                             test-method "GET"
+                             requi (js/Request. test-url)
+                             req-map (hc/request->map requi)]
+                         (is (and (= (:url req-map) test-url)
+                                  (= (:method req-map) test-method)))))}]})
+
+(def map->request-tests
+  {:on "map->request"
+   :tests [{:aspect "returns a request with the specified properties"
+            :test-fn (fn [is]
+                       (let [test-map {:url "https://www.google.com/"
+                                       :method "PUT"
+                                       :headers {:foo "too"}
+                                       :cache "no-cache"}
+                             requi (hc/map->request test-map)]
+                         (println "headers are " (walk/keywordize-keys (into {} (map vec (es6-iterator-seq (.entries (.-headers requi)))))))
+                         (is (and (= (.-url requi) (:url test-map))
+                                  (= (.-method requi) (:method test-map))
+                                  (= (.-cache requi) (:cache test-map))
+                                  (= (hc/headers->map (.-headers requi))
+                                     (:headers test-map))))))}]})
+
+(def map->request->map-tests
+  {:on "map->request and request->map"
+   :tests [{:aspect "are reversible"
+            :test-fn (fn [is]
+                       (let [initial-request (js/Request.
+                                               "https://www.google.com/"
+                                               (clj->js {:method "PUT" :cache "reload"
+                                                         :headers {:thing "hello"
+                                                                   :content-type "text/html;charset=UTF-8"}}))
+                             round-tripped-request (-> initial-request
+                                                       (hc/request->map)
+                                                       (hc/map->request)
+                                                       (hc/request->map)
+                                                       (hc/map->request))]
+                         (is (= (hc/request->map initial-request)
+                                (hc/request->map round-tripped-request)))))}]})
+
+(def response->map-tests
+  {:on "response->map"
+   :tests [{:aspect "returns a map"
+            :test-fn (fn [is]
+                       (is (map? (hc/response->map! (js/Response. (pr-str {:thing "another" :answer 42}))))))}
+           {:aspect "returns a map that contains right values"
+            :test-fn (fn [is]
+                       (let [sample-status-text "Passed!"
+                             sample-status 200
+                             sample-body (pr-str {:thing "another" :answer 42})
+                             sample-headers {:foo "bar"
+                                             :thing "another"}
+                             sample-init {:statusText sample-status-text
+                                          :status sample-status
+                                          :foo "bar"
+                                          :headers sample-headers}
+                             converted-map (hc/response->map! (js/Response.
+                                                                sample-body (clj->js sample-init)))]
+                         (is (and (= (:status converted-map) sample-status)
+                                  (= (:status-text converted-map) sample-status-text)
+                                  (= (:headers sample-headers))))))}]})
+
+(def map->response-tests
+  {:on "map->request"
+   :tests [{:aspect "constructs a response correctly"
+            :test-fn (fn [is]
+                       (let [sample-status-text "Yes, did it"
+                             sample-status 201
+                             sample-body (pr-str {:whatever "floats" :your [\b\o\a\t]})
+                             sample-param {:statusText sample-status-text
+                                           :status sample-status
+                                           :body sample-body}
+                             constructed-response (hc/map->response! sample-param)]
+                         (println "response is " constructed-response)
+                         (is (and (= (.-status constructed-response) sample-status)))))}]})
+
 
 
 (def all-tests
-  [promise->chan-tests
+  [map->response-tests
+   response->map-tests
+   map->request->map-tests
+   map->request-tests
+   request->map-tests
+   header-converter-tests
+   promise->chan-tests
    chan->promise-tests
    chan->promise->chan-tests])
