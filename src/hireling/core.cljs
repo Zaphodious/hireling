@@ -70,34 +70,75 @@
                          (assoc :headers (map->headers headers))
                          clj->js)))
 
-(defn fetch [url-string]
-  (let [scope (if js/window js/window js/WorkerGlobalScope)
-        fetch-chan (promise->chan! (js/fetch url-string))
-        return-chan (async/chan)]
-    (async/go
-      (let [response (async/<! fetch-chan)]
-        (response->map! response)))))
+;(def default-fetch-opts
+;  {:type :string
+;   :method :get
+;   :url ""})
+;
+;(defn fetch
+;  [arg-opts-map]
+;  (let [{:keys [url type] :as opts-map} (into default-fetch-opts arg-opts-map)
+;        scope (if js/window js/window js/WorkerGlobalScope)
+;        fetch-chan (promise->chan! (js/fetch url))
+;        return-chan (async/chan)]
+;    (async/go
+;      (let [response (async/<! fetch-chan)]
+;        (case type
+;          :response (async/>! return-chan (response->map! response))
+;          :string (async/take (promise->chan! (.text response))
+;                              (fn [a] (async/>! return-chan a))))))
+;    return-chan))
 
 (defn register-worker [worker-file-path]
   (when (.-serviceWorker js/navigator)
     (.. js/navigator -serviceWorker (register worker-file-path))))
 
-(def default-worker {:version        1
+(def default-worker {:version      1
                      :cache-name   "hireling-cache"
                      :cached-paths [""]
-                     :on-install!  (fn [{:keys [event done-chan]}]
+                     :on-install!  (fn [{:keys [event done-fn]}]
                                      (println "No install declared for this service worker.")
-                                     (async/put! done-chan event))})
+                                     (done-fn))
+                     :on-activate! (fn [{:keys [event done-fn]}]
+                                     (println "No activate declared for this worker.")
+                                     (done-fn))
+                     :on-fetch!    (fn [{:keys [event done-fn]}]
+                                     (println "Got a fetch event! Event is " event)
+                                     #_(let [response-chan (async/chan)]
+                                           response-promise (.then (.match js/caches (.-request event))
+                                                                   (fn [response]
+                                                                     (println "actual response is " response)
+                                                                     (if response
+                                                                       (.respondWith event response)
+                                                                       (.respondWith event (js/fetch (.-request event)))))))
+                                     (-> event (.respondWith (js/fetch "/simple.txt"))))})
+
 
 (defn start-service-worker!
   "Starts the service worker with the provided options map."
   [provided-impl-map]
   (enable-console-print!)
-  (let [[install-done-chan] (take 1 (repeatedly #(async/chan)))
-        {:keys [on-install!] :as combined-impl-map} (into default-worker provided-impl-map)]
-
+  (let [[[install-done-chan install-done-fn]
+         [activate-done-chan activate-done-fn]
+         [fetch-done-chan fetch-done-fn]]
+        (map
+          (fn [ch] [ch (fn
+                         ([] (async/put! ch :done))
+                         ([a] (async/put! ch a))
+                         ([a & bs] (async/put! ch (into [a] bs))))])
+          (take 3 (repeatedly #(async/chan))))
+        {:keys [on-install! on-activate! on-fetch!] :as combined-impl-map} (into default-worker provided-impl-map)]
     (.addEventListener
       js/self "install"
       (fn [ev]
-        (async/go (on-install! (into combined-impl-map {:event ev :done-chan install-done-chan})))
-        (.waitUntil ev (chan->promise! install-done-chan))))))
+        (async/go (on-install! (into combined-impl-map {:event ev :done-fn install-done-fn})))
+        (.waitUntil ev (chan->promise! install-done-chan))))
+    (.addEventListener
+      js/self "activate"
+      (fn [ev]
+        (async/go (on-activate! (into combined-impl-map {:event ev :done-fn activate-done-fn})))
+        (.waitUntil ev (chan->promise! activate-done-chan))))
+    (.addEventListener
+      js/self "fetch"
+      (fn [ev]
+        (on-fetch! (into combined-impl-map {:event ev :done-fn fetch-done-fn}))))))

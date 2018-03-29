@@ -213,22 +213,29 @@
                          (is (and (= (.-status constructed-response) sample-status)))))}]})
 (def simple-text-url "/simple.txt")
 
-(def fetch-tests
-  {:on "hireling.core/fetch"
-   :tests [{:aspect "properly returns a chan."
-            :testing-args [simple-text-url]
-            :test-fn (fn [is stu]
-                       (is (satisfies? async-prot/ReadPort (hc/fetch stu))))}
-           {:aspect "chan gets proper file."
-            :should-be "I'm from a server!"
-            :testing-args [simple-text-url]
-            :test-fn (fn [is stu]
-                       (async/take! (hc/fetch stu) (fn [a] (is a))))}]})
+
+;(def fetch-tests
+;  {:on    "hireling.core/fetch"
+;   :tests [{:aspect       "properly returns a chan."
+;            :testing-args [simple-text-url]
+;            :test-fn      (fn [is stu]
+;                            (is (satisfies? async-prot/ReadPort (hc/fetch {:url stu}))))}
+;           {:aspect       "chan gets a response map if no return-type is specified."
+;            :should-be    {:status-text "OK" :type "basic" :status 200}
+;            :testing-args [simple-text-url]
+;            :test-fn      (fn [is stu]
+;                            (async/take! (hc/fetch {:url stu})
+;                                         (fn [a] (is (select-keys a [:status-text :type :status])))))}
+;           {:aspect       "chan gets text if the return-type is :string"
+;            :should-be    "I'm from a server!"
+;            :testing-args [simple-text-url]
+;            :test-fn      (fn [is stu]
+;                            (async/take! (hc/fetch {:url stu :return-type :string})
+;                                         (fn [a] (is a))))}]})
 
 
 (def all-tests
-  [fetch-tests
-   map->response-tests
+  [map->response-tests
    response->map-tests
    map->request->map-tests
    map->request-tests
