@@ -218,7 +218,6 @@
 (def never-cache-url (bidi/path-for hroutes/routemap ::hroutes/never-cache-txt))
 (def always-cache-url (bidi/path-for hroutes/routemap ::hroutes/always-cache-txt))
 (def fastest-cache-url (bidi/path-for hroutes/routemap ::hroutes/fastest-cache-txt))
-(def rand-all-url-base (bidi/path-for hroutes/routemap ::hroutes/rand-all))
 
 (defn fetch-equiv-test
   "Takes the assertion function, the url to call, and the number of times the url should be called."
@@ -232,8 +231,8 @@
         (println "the set is " the-set)
         (is (count the-set))))))
 
-(def service-worker-caching-tests
-  {:on    "Service Worker Cached-Paths setting"
+(def service-worker-cache-paths-test
+  {:on    "Service Worker Cached-Paths System"
    :tests [{:aspect       "correctly passes non-cached data through."
             :testing-args [never-cache-url 30]
             :should-be    30                                ;assures that we are, in fact, getting a substantial amount of data through.
@@ -247,8 +246,26 @@
             :should-be    :never-passes                                ;assures that all the data received is identical.
             :test-fn      fetch-equiv-test}]})
 
+
+(def rand-all-url-base (bidi/path-for hroutes/routemap ::hroutes/rand-all))
+
+(def service-worker-cache-conditional-tests
+  {:on "Service Worker Cache-Conditional System"
+   :tests [{:aspect "correctly does not cache :never-cache"
+            :testing-args [(str rand-all-url-base "uncached/" (gensym "never"))
+                           30]
+            :should-be 30
+            :test-fn fetch-equiv-test}
+           {:aspect "correctly caches :cache-only"
+            :testing-args [(str rand-all-url-base "allcached/" (gensym "always"))
+                           30]
+            :should-be 1
+            :test-fn fetch-equiv-test}]})
+
+
 (def all-tests
-  [service-worker-caching-tests
+  [service-worker-cache-conditional-tests
+   service-worker-cache-paths-test
    map->response-tests
    response->map-tests
    map->request->map-tests

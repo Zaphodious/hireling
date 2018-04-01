@@ -92,13 +92,25 @@
 ;                              (fn [a] (async/>! return-chan a))))))
 ;    return-chan))
 
-(defn which-cache-strategy? [path cached-paths]
-  (let [cleaned-path (str/replace path (oget js/self :location :origin) "")]
-    (->> cached-paths
-         (filter (fn [[k vs]]
-                   (vs cleaned-path)))
-         (first)
-         (first))))
+(defn which-cache-strategy? [path cached-paths cache-conditionals]
+  (let [cleaned-path (str/replace path (oget js/self :location :origin) "")
+        initial-match (->> cached-paths
+                           (filter (fn [[k vs]]
+                                     (vs cleaned-path)))
+                           (first)
+                           (first))
+        full-match (if initial-match
+                     initial-match
+                     (->> cache-conditionals
+                          (map
+                            (fn [[k vf]]
+                              (if (vf cleaned-path)
+                                k nil)))
+                          (filter #(not (nil? %)))
+                          first))]
+    (println "caching strat for " path " is " full-match)
+    full-match))
+
 
 (defn cache-the-response [resp-promise event]
   (.then resp-promise
@@ -148,7 +160,7 @@
 (defn default-on-fetch-handler [{:keys [event done-fn cached-paths cache-name version cache-conditional] :as event-params}]
   (oset! event :!versionedCacheName (str cache-name "_" version))
   (let [{:keys [cache-never cache-fastest cache-only]} cached-paths
-        cache-strat (which-cache-strategy? (.-url (.-request event)) cached-paths)]
+        cache-strat (which-cache-strategy? (.-url (.-request event)) cached-paths cache-conditional)]
     (when cache-strat (println "provided cache strat is" cache-strat))
     (-> event (.respondWith
                 (promise-for-strat cache-strat event)))))

@@ -1,11 +1,16 @@
 (ns hireling.worker
   (:require [hireling.core :as hc]
             [bidi.bidi :as bidi]
-            [hireling.routes :as hroutes]))
+            [hireling.routes :as hroutes]
+            [clojure.string :as str]
+            [oops.core :refer [oget oset! ocall oapply ocall! oapply!
+                               oget+ oset!+ ocall+ oapply+ ocall!+ oapply!+]]))
 
 (enable-console-print!)
 
-(println "Service Worker installs my friend!")
+(println "Service Worker loads.")
+
+(defn clean-testing-route [patho] (str/replace patho (oget js/self :location :origin) ""))
 
 (hc/start-service-worker! {; As service workers are updated in the browser when the file itself is byte-different
                            ; to a previous version, (and if you're including shared code with your sw build, it will
@@ -70,9 +75,13 @@
                            ; but instead of a vector of path strings each option maps to a function taking
                            ; the request path and returning a boolean. Any time a request is made
                            ; and the url is not found within :cached-paths, its checked against :cache-conditional.
-                           :cache-conditional {:cache-never   (constantly false)
+                           :cache-conditional {:cache-never   (fn [patho]
+                                                                (= ::hroutes/rand-all-uncached
+                                                                  (bidi/match-route hroutes/routemap (clean-testing-route patho))))
                                                :cache-fastest (constantly false)
-                                               :cache-only    (constantly false)}
+                                               :cache-only    (fn [patho]
+                                                                (= ::hroutes/rand-all-cached
+                                                                   (bidi/match-route hroutes/routemap (clean-testing-route patho))))}
 
                            ; The :send-later option handles POST and PUT requests, and accepts a map of
                            ; {fn (urlstring)->boolean, [frequencey-of-request, max-requests] }. If the function evals

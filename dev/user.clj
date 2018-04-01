@@ -98,6 +98,9 @@
     ::hroutes/style style-handler
     ::hroutes/simple-txt simple-txt-handler
     ::hroutes/rand-all rand-handler
+    ::hroutes/rand-all-uncached rand-handler
+    ::hroutes/rand-all-cached rand-handler
+    ::hroutes/rand-all-fastest-cached rand-handler
     ::hroutes/always-cache-txt rand-handler
     ::hroutes/never-cache-txt rand-handler
     ::hroutes/fastest-cache-txt rand-handler))
