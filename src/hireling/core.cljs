@@ -145,13 +145,27 @@
 (defmethod promise-for-strat :cache-fastest [_ event] (handle-cache-fastest event))
 (defmethod promise-for-strat :cache-never [_ event] (promise-from-network event))
 
-(defn default-on-fetch-handler [{:keys [event done-fn cached-paths cache-name version] :as event-params}]
+(defn default-on-fetch-handler [{:keys [event done-fn cached-paths cache-name version cache-conditional] :as event-params}]
   (oset! event :!versionedCacheName (str cache-name "_" version))
   (let [{:keys [cache-never cache-fastest cache-only]} cached-paths
         cache-strat (which-cache-strategy? (.-url (.-request event)) cached-paths)]
     (when cache-strat (println "provided cache strat is" cache-strat))
     (-> event (.respondWith
                 (promise-for-strat cache-strat event)))))
+
+(defn default-on-install-handler [{:keys [event done-fn version cache-name cached-paths]}]
+  (.skipWaiting js/self)
+  (println "host is " (.-host (.-location js/self)))
+  (let [{:keys [cache-never cache-fastest cache-only]} cached-paths]
+    (-> js/caches
+        (.open (str cache-name "_" version))
+        (.then (fn [cache]
+                 (println "attempting to cache "
+                          (clj->js (into cache-only cache-fastest)))
+                 (.then (.addAll cache (clj->js (into cache-only cache-fastest)))
+                        (fn [a] (done-fn))
+                        (fn [a] (done-fn {::rejection "Failed to add everything."}))))))
+    (println "No install declared for this service worker.")))
 
 (defn register-worker [worker-file-path]
   (when (.-serviceWorker js/navigator)
@@ -162,19 +176,7 @@
                      :cached-paths {:cache-never   [""]
                                     :cache-fastest [""]
                                     :cache-only    [""]}
-                     :on-install!  (fn [{:keys [event done-fn version cache-name cached-paths]}]
-                                     (.skipWaiting js/self)
-                                     (println "host is " (.-host (.-location js/self)))
-                                     (let [{:keys [cache-never cache-fastest cache-only]} cached-paths]
-                                       (-> js/caches
-                                           (.open (str cache-name "_" version))
-                                           (.then (fn [cache]
-                                                    (println "attempting to cache "
-                                                             (clj->js (into cache-only cache-fastest)))
-                                                    (.then (.addAll cache (clj->js (into cache-only cache-fastest)))
-                                                           (fn [a] (done-fn))
-                                                           (fn [a] (done-fn {::rejection "Failed to add everything."}))))))
-                                       (println "No install declared for this service worker.")))
+                     :on-install!  default-on-install-handler
                      :on-activate! (fn [{:keys [event done-fn]}]
                                      (println "No activate declared for this worker.")
                                      (done-fn))

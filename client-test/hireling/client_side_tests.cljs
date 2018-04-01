@@ -2,7 +2,9 @@
   (:require [cljs.core.async :as async]
             [cljs.core.async.impl.protocols :as async-prot]
             [hireling.core :as hc]
-            [clojure.walk :as walk]))
+            [clojure.walk :as walk]
+            [hireling.routes :as hroutes]
+            [bidi.bidi :as bidi]))
 
 
 (def promise->chan-tests
@@ -212,10 +214,11 @@
                          (println "response is " constructed-response)
                          (is (and (= (.-status constructed-response) sample-status)))))}]})
 
-(def simple-text-url "/simple.txt")
-(def never-cache-url "/rand/never-cached.txt")
-(def always-cache-url "/rand/always-cached.txt")
-(def cache-updates-url "/rand/cache-updates.txt")
+(def simple-text-url (bidi/path-for hroutes/routemap ::hroutes/simple-txt))
+(def never-cache-url (bidi/path-for hroutes/routemap ::hroutes/never-cache-txt))
+(def always-cache-url (bidi/path-for hroutes/routemap ::hroutes/always-cache-txt))
+(def fastest-cache-url (bidi/path-for hroutes/routemap ::hroutes/fastest-cache-txt))
+(def rand-all-url-base (bidi/path-for hroutes/routemap ::hroutes/rand-all))
 
 (defn fetch-equiv-test
   "Takes the assertion function, the url to call, and the number of times the url should be called."
@@ -230,7 +233,7 @@
         (is (count the-set))))))
 
 (def service-worker-caching-tests
-  {:on    "Service Worker Networking"
+  {:on    "Service Worker Cached-Paths setting"
    :tests [{:aspect       "correctly passes non-cached data through."
             :testing-args [never-cache-url 30]
             :should-be    30                                ;assures that we are, in fact, getting a substantial amount of data through.
@@ -240,30 +243,9 @@
             :should-be    1                                 ;assures that all the data received is identical.
             :test-fn      fetch-equiv-test}
            {:aspect       "gets the fastest response between cache and server. Always fails. Set simulated ping between 15 and 30 to see differences."
-            :testing-args [cache-updates-url 30]
-            :should-be    29                                ;assures that all the data received is identical.
+            :testing-args [fastest-cache-url 30]
+            :should-be    :never-passes                                ;assures that all the data received is identical.
             :test-fn      fetch-equiv-test}]})
-
-
-;(def fetch-tests
-;  {:on    "hireling.core/fetch"
-;   :tests [{:aspect       "properly returns a chan."
-;            :testing-args [simple-text-url]
-;            :test-fn      (fn [is stu]
-;                            (is (satisfies? async-prot/ReadPort (hc/fetch {:url stu}))))}
-;           {:aspect       "chan gets a response map if no return-type is specified."
-;            :should-be    {:status-text "OK" :type "basic" :status 200}
-;            :testing-args [simple-text-url]
-;            :test-fn      (fn [is stu]
-;                            (async/take! (hc/fetch {:url stu})
-;                                         (fn [a] (is (select-keys a [:status-text :type :status])))))}
-;           {:aspect       "chan gets text if the return-type is :string"
-;            :should-be    "I'm from a server!"
-;            :testing-args [simple-text-url]
-;            :test-fn      (fn [is stu]
-;                            (async/take! (hc/fetch {:url stu :return-type :string})
-;                                         (fn [a] (is a))))}]})
-
 
 (def all-tests
   [service-worker-caching-tests

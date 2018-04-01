@@ -3,6 +3,7 @@
             [bidi.bidi :as bidi]
             [bidi.ring :as bring]
             [hireling.gardener :as gardener]
+            [hireling.routes :as hroutes]
             [ring.util.response :as resp]
             [ring-cljsbuild.core :as ring-cljs]
             [org.httpkit.server :as server :refer [run-server]]))
@@ -13,7 +14,8 @@
     [:meta {:charset "UTF-8"}]
     [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
     [:link {:href "style.css" :rel "stylesheet" :type "text/css"}]
-    [:link {:href "worker.js" :rel "preload" :type "text/javascript"}]]
+    [:link {:href "worker.js" :rel "preload" :as "script"}]
+    [:link {:href "/js/main.js" :rel "preload" :as "script"}]]
    [:body
     [:div {:id "app"}
      [:h2 "Pre-JS Template"]]
@@ -81,20 +83,24 @@
                                    :target         :webworker
                                    :main           "hireling.worker"}}}))
 
-
+(declare route-matcher handler)
 
 (def handler
-  (bring/make-handler ["/" {"js/"              {true (main-js-builder handler)}
-                            "worker.js"        (worker-js-builder handler)
-                            "out/"             {true (worker-js-builder handler)}
-                            #{"" "index.html"} index-handler
-                            "style.css"        style-handler
-                            "simple.txt"       simple-txt-handler
-                            "rand/"            {"always-cached.txt" rand-handler
-                                                "never-cached.txt"  rand-handler
-                                                "cache-updates.txt" rand-handler}}]))
+  (bring/make-handler hroutes/routemap
+                      route-matcher))
 
-
+(defn route-matcher [route-key]
+  (case route-key
+    ::hroutes/index index-handler
+    ::hroutes/main-js (main-js-builder handler)
+    ::hroutes/worker-js (worker-js-builder handler)
+    ::hroutes/worker-js-assets (worker-js-builder handler)
+    ::hroutes/style style-handler
+    ::hroutes/simple-txt simple-txt-handler
+    ::hroutes/rand-all rand-handler
+    ::hroutes/always-cache-txt rand-handler
+    ::hroutes/never-cache-txt rand-handler
+    ::hroutes/fastest-cache-txt rand-handler))
 
 (defonce
   stop-fn-atom (atom

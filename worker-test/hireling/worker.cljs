@@ -1,5 +1,7 @@
 (ns hireling.worker
-  (:require [hireling.core :as hc]))
+  (:require [hireling.core :as hc]
+            [bidi.bidi :as bidi]
+            [hireling.routes :as hroutes]))
 
 (enable-console-print!)
 
@@ -40,7 +42,7 @@
                                                ; responsibility of the originating server to ensure that proper
                                                ; no-caching headers are included, as occasionally a browser might
                                                ; still impose its own cache.
-                                               :cache-never   ["/rand/never-cached.txt"]
+                                               :cache-never   [(bidi/path-for hroutes/routemap ::hroutes/never-cache-txt)]
 
                                                ; Paths under :cache-last are cached, but returned only when the user
                                                ; is fully offline. Does not provide assurance for low-connectivity
@@ -54,14 +56,14 @@
                                                ; css, images, and anything else that might change but should
                                                ; arrive quickly in the browser. Resilient against low or no
                                                ; connectivity.
-                                               :cache-fastest ["/rand/cache-updates.txt"]
+                                               :cache-fastest [(bidi/path-for hroutes/routemap ::hroutes/fastest-cache-txt)]
 
                                                ; Paths under :cache-only are cached once and not updated.
                                                ; Should be used for resources that never change, as
                                                ; once a service worker is introduced with this behavior
                                                ; there are no guarantees that this behavior will ever
                                                ; be updated for a given user. Resilient against low or no connectivity.
-                                               :cache-only    ["/rand/always-cached.txt"]}
+                                               :cache-only    [(bidi/path-for hroutes/routemap ::hroutes/always-cache-txt)]}
 
 
                            ; The :cache-conditional entry takes the same options as :cached-paths,
