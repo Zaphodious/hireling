@@ -14,7 +14,7 @@
     (-> test-def-map
         (assoc :async-atom async-atom))))
 
-(defn get-test-status [{:keys [testing aspect should-be test-fn testing-args async-atom] :as test-def-map :or {[] testing-arg-vec}}]
+(defn get-test-status [{:keys [testing aspect should-be test-fn testing-args async-atom non-deterministic] :as test-def-map :or {[] testing-arg-vec}}]
   (let [actually @async-atom
         error? (::error actually)
         passing? (= actually should-be)
@@ -23,10 +23,11 @@
       error? :failing
       passing? :passing
       waiting? :waiting
+      non-deterministic :non-deterministic
       :else :failing)))
 
 (rum/defc render-test < rum/reactive
-  [{:keys [testing aspect should-be test-fn testing-args actually async-atom] :as test-def-map}]
+  [{:keys [testing aspect should-be test-fn testing-args actually async-atom non-deterministic] :as test-def-map}]
   (let [result (rum/react async-atom)
         status (get-test-status test-def-map)
         error (::error result)]
@@ -35,9 +36,13 @@
      [(when testing [:.tested-thing testing])
       [:.aspect aspect]
       (when-not (or (= status :passing) (= status :waiting))
-        [:.result [[:.message (str "Expecting " (pr-str should-be) ", but got " (if error
-                                                                                  (js->clj error)
-                                                                                  (pr-str result)))]
+        [:.result [[:.message
+                    (if non-deterministic
+                      (str "Result was " (pr-str result))
+                      (str "Expecting " (pr-str should-be) ", but got "
+                                     (if error
+                                         (js->clj error)
+                                         (pr-str result))))]
                    (when error
                      (do
                        (*print-err-fn*
@@ -98,6 +103,9 @@
                       :test-fn #(% true)}
                      {:aspect  "knows how to deal with no 'should be' and no 'testing-args' and fails on false"
                       :test-fn #(% false)}
+                     {:aspect "Runs non-deterministic tests correctly"
+                      :non-deterministic true
+                      :test-fn #(% (rand-int 999))}
                      {:aspect    "runs async tests"
                       :should-be 100000
                       :test-fn   (fn [f]

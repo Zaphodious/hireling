@@ -241,9 +241,9 @@
             :testing-args [always-cache-url 30]
             :should-be    1                                 ;assures that all the data received is identical.
             :test-fn      fetch-equiv-test}
-           {:aspect       "gets the fastest response between cache and server. Always fails. Set simulated ping between 15 and 30 to see differences."
+           {:aspect       "gets the fastest response between cache and server. Set simulated ping between 15 and 30 to see differences."
             :testing-args [fastest-cache-url 30]
-            :should-be    :never-passes                                ;assures that all the data received is identical.
+            :non-deterministic true                             ;assures that all the data received is identical.
             :test-fn      fetch-equiv-test}]})
 
 

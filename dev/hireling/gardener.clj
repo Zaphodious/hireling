@@ -17,6 +17,7 @@
 (def pass-color (color/from-name :green))
 (def fail-color (color/from-name :red))
 (def wait-color (color/from-name :purple))
+(def nd-color (color/from-name :gray))
 (def test-coll-color-pass (color/from-name :forestgreen))
 (def test-coll-color-fail (color/from-name :firebrick))
 (def test-coll-color-wait (color/from-name :darkviolet))
@@ -36,6 +37,8 @@
                              :box-shadow       (make-seq-shadow test-coll-color-pass)}]
                 [:&.failing {:background-color (make-seq-background-color test-coll-color-fail)
                              :box-shadow       (make-seq-shadow test-coll-color-fail)}]
+                [:&.waiting {:background-color (make-seq-background-color test-coll-color-wait)
+                             :box-shadow       (make-seq-shadow test-coll-color-wait)}]
                 [:&.waiting {:background-color (make-seq-background-color test-coll-color-wait)
                              :box-shadow       (make-seq-shadow test-coll-color-wait)}]
                 [:h3 {:padding   0
@@ -66,7 +69,11 @@
                 [:&.failing {:border-color     :red
                              :box-shadow       (make-test-shadow fail-color)
                              :background-color (make-test-background-color fail-color)}
-                 [:.tested-thing [:&:before {:content "\"Fail: \""}]]]]])
+                 [:.tested-thing [:&:before {:content "\"Fail: \""}]]]
+                [:&.non-deterministic {:border-color     :red
+                                       :box-shadow       (make-test-shadow nd-color)
+                                       :background-color (make-test-background-color nd-color)}
+                           [:.tested-thing [:&:before {:content "\"Please Observe: \""}]]]]])
 
 
 
