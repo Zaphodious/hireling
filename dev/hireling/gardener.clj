@@ -27,46 +27,46 @@
 
 (def styledec [:html {:background-color :black}
                [:* {:font-family "sans-serif"}]
-               [:.test-collection {:border-color :black
-                                   :border-width :1px
-                                   :border-style :solid
+               [:.test-collection {:border-color  :black
+                                   :border-width  :1px
+                                   :border-style  :solid
                                    :border-radius :3px
-                                   :transition waiting-transition}
+                                   :transition    waiting-transition}
                 [:&.passing {:background-color (make-seq-background-color test-coll-color-pass)
-                             :box-shadow (make-seq-shadow test-coll-color-pass)}]
+                             :box-shadow       (make-seq-shadow test-coll-color-pass)}]
                 [:&.failing {:background-color (make-seq-background-color test-coll-color-fail)
-                             :box-shadow (make-seq-shadow test-coll-color-fail)}]
+                             :box-shadow       (make-seq-shadow test-coll-color-fail)}]
                 [:&.waiting {:background-color (make-seq-background-color test-coll-color-wait)
-                             :box-shadow (make-seq-shadow test-coll-color-wait)}]
-                [:h3 {:padding 0
-                      :margin :7px
+                             :box-shadow       (make-seq-shadow test-coll-color-wait)}]
+                [:h3 {:padding   0
+                      :margin    :7px
                       :font-size :1.2em}]
-                [:.stats {:margin :6px
+                [:.stats {:margin      :6px
                           :margin-left :30px
-                          :padding 0}]]
-               [:.test-result {:padding      :5px
-                                :margin       :10px
-                                :overflow-x   :wrap
-                                :border-width :0px
-                                :border-style :inset
-                                :border-radius :3px
-                                :box-shadow   ""
-                               :transition waiting-transition}
-                 [:.aspect [:&:before {:content "\" \""}]]
-                 [:.tested-thing :.aspect {:font-size :1.2em
-                                           :display   :inline}]
-                 [:&.passing {:border-color     :green
-                              :box-shadow       (make-test-shadow pass-color)
-                              :background-color (make-test-background-color pass-color)}
-                  [:.tested-thing [:&:before {:content "\"Pass: \""}]]]
-                 [:&.waiting {:border-color     :purple
-                              :box-shadow       (make-test-shadow wait-color)
-                              :background-color (make-test-background-color wait-color)}
-                  [:.tested-thing [:&:before {:content "\"Waiting: \""}]]]
-                 [:&.failing {:border-color     :red
-                              :box-shadow       (make-test-shadow fail-color)
-                              :background-color (make-test-background-color fail-color)}
-                  [:.tested-thing [:&:before {:content "\"Fail: \""}]]]]])
+                          :padding     0}]]
+               [:.test-result {:padding       :5px
+                               :margin        :10px
+                               :overflow-x    :wrap
+                               :border-width  :0px
+                               :border-style  :inset
+                               :border-radius :3px
+                               :box-shadow    ""
+                               :transition    waiting-transition}
+                [:.aspect [:&:before {:content "\" \""}]]
+                [:.tested-thing :.aspect {:font-size :1.2em
+                                          :display   :inline}]
+                [:&.passing {:border-color     :green
+                             :box-shadow       (make-test-shadow pass-color)
+                             :background-color (make-test-background-color pass-color)}
+                 [:.tested-thing [:&:before {:content "\"Pass: \""}]]]
+                [:&.waiting {:border-color     :purple
+                             :box-shadow       (make-test-shadow wait-color)
+                             :background-color (make-test-background-color wait-color)}
+                 [:.tested-thing [:&:before {:content "\"Waiting: \""}]]]
+                [:&.failing {:border-color     :red
+                             :box-shadow       (make-test-shadow fail-color)
+                             :background-color (make-test-background-color fail-color)}
+                 [:.tested-thing [:&:before {:content "\"Fail: \""}]]]]])
 
 
 

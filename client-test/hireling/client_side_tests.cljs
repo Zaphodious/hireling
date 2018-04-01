@@ -23,12 +23,12 @@
                                            (println "succeeds with a " a)
                                            (is (= test-value a)))]
                            (async/take! successful-chan equaltest))))}
-           {:aspect  "returns a channel that deals with rejection"
+           {:aspect    "returns a channel that deals with rejection"
             :should-be {::hc/rejection "Because I said so."}
-            :test-fn (fn [is]
-                       (let [reject-value "Because I said so."]
-                         (let [equaltest (fn [a] (is a))]
-                           (async/take! (hc/promise->chan! (.reject js/Promise reject-value)) equaltest))))}]})
+            :test-fn   (fn [is]
+                         (let [reject-value "Because I said so."]
+                           (let [equaltest (fn [a] (is a))]
+                             (async/take! (hc/promise->chan! (.reject js/Promise reject-value)) equaltest))))}]})
 
 (def chan->promise-tests
   {:on    "chan->promise!"
@@ -62,8 +62,8 @@
 
 
 (def chan->promise->chan-tests
-  {:on "chan->promise! and promise->chan!"
-   :tests [{:aspect "go back and forth without loss"
+  {:on    "chan->promise! and promise->chan!"
+   :tests [{:aspect  "go back and forth without loss"
             :test-fn (fn [is]
                        (let [starting-chan (async/chan)
                              test-data "MAN was that tunnel dark!"]
@@ -89,52 +89,52 @@
                              (hc/chan->promise!)
                              (.then (fn [a] (is (= test-data a)))))
                          (async/go (async/>! starting-chan test-data))))}
-           {:aspect "fail cascades correctly."
+           {:aspect    "fail cascades correctly."
             :should-be "I hit every branch on the way down."
-            :test-fn (fn [is]
-                       (let [starting-chan (async/chan)
-                             test-data "I hit every branch on the way down."
-                             fail-fn (fn [a] (is "The promise/chan stack didn't reject."))
-                             pass-fn #(is %)]
-                         (-> starting-chan
-                             (hc/chan->promise!)
-                             (hc/promise->chan!)
-                             (hc/chan->promise!)
-                             (hc/promise->chan!)
-                             (hc/chan->promise!)
-                             (hc/promise->chan!)
-                             (hc/chan->promise!)
-                             (hc/promise->chan!)
-                             (hc/chan->promise!)
-                             (hc/promise->chan!)
-                             (hc/chan->promise!)
-                             (hc/promise->chan!)
-                             (hc/chan->promise!)
-                             (hc/promise->chan!)
-                             (hc/chan->promise!)
-                             (hc/promise->chan!)
-                             (hc/chan->promise!)
-                             (hc/promise->chan!)
-                             (hc/chan->promise!)
-                             (.then
-                               fail-fn
-                               pass-fn))
-                         (async/go (async/>! starting-chan {::hc/rejection test-data}))))}]})
+            :test-fn   (fn [is]
+                         (let [starting-chan (async/chan)
+                               test-data "I hit every branch on the way down."
+                               fail-fn (fn [a] (is "The promise/chan stack didn't reject."))
+                               pass-fn #(is %)]
+                           (-> starting-chan
+                               (hc/chan->promise!)
+                               (hc/promise->chan!)
+                               (hc/chan->promise!)
+                               (hc/promise->chan!)
+                               (hc/chan->promise!)
+                               (hc/promise->chan!)
+                               (hc/chan->promise!)
+                               (hc/promise->chan!)
+                               (hc/chan->promise!)
+                               (hc/promise->chan!)
+                               (hc/chan->promise!)
+                               (hc/promise->chan!)
+                               (hc/chan->promise!)
+                               (hc/promise->chan!)
+                               (hc/chan->promise!)
+                               (hc/promise->chan!)
+                               (hc/chan->promise!)
+                               (hc/promise->chan!)
+                               (hc/chan->promise!)
+                               (.then
+                                 fail-fn
+                                 pass-fn))
+                           (async/go (async/>! starting-chan {::hc/rejection test-data}))))}]})
 
 (def header-converter-tests
-  {:on "map->headers and headers->map"
-   :tests [{:aspect "are reversible"
+  {:on    "map->headers and headers->map"
+   :tests [{:aspect  "are reversible"
             :test-fn (fn [is]
-                       (let [test-headers {:foo "too"
-                                           :this "that"
+                       (let [test-headers {:foo    "too"
+                                           :this   "that"
                                            :answer "42"}
                              converted (hc/map->headers test-headers)
                              round-tripped (hc/headers->map converted)]
                          (is (= test-headers round-tripped))))}]})
 
 (def request->map-tests
-  {:on "request->map"
-   :tests [{:aspect "returns a map with the relevant properties expressed in EDN"
+  {:on    "request->map"
+   :tests [{:aspect  "returns a map with the relevant properties expressed in EDN"
             :test-fn (fn [is]
                        (let [test-url "https://www.google.com/"
                              test-method "GET"
@@ -144,13 +144,13 @@
                                   (= (:method req-map) test-method)))))}]})
 
 (def map->request-tests
-  {:on "map->request"
-   :tests [{:aspect "returns a request with the specified properties"
+  {:on    "map->request"
+   :tests [{:aspect  "returns a request with the specified properties"
             :test-fn (fn [is]
-                       (let [test-map {:url "https://www.google.com/"
-                                       :method "PUT"
+                       (let [test-map {:url     "https://www.google.com/"
+                                       :method  "PUT"
                                        :headers {:foo "too"}
-                                       :cache "no-cache"}
+                                       :cache   "no-cache"}
                              requi (hc/map->request test-map)]
                          (println "headers are " (walk/keywordize-keys (into {} (map vec (es6-iterator-seq (.entries (.-headers requi)))))))
                          (is (and (= (.-url requi) (:url test-map))
@@ -160,13 +160,13 @@
                                      (:headers test-map))))))}]})
 
 (def map->request->map-tests
-  {:on "map->request and request->map"
-   :tests [{:aspect "are reversible"
+  {:on    "map->request and request->map"
+   :tests [{:aspect  "are reversible"
             :test-fn (fn [is]
                        (let [initial-request (js/Request.
                                                "https://www.google.com/"
-                                               (clj->js {:method "PUT" :cache "reload"
-                                                         :headers {:thing "hello"
+                                               (clj->js {:method  "PUT" :cache "reload"
+                                                         :headers {:thing        "hello"
                                                                    :content-type "text/html;charset=UTF-8"}}))
                              round-tripped-request (-> initial-request
                                                        (hc/request->map)
@@ -177,21 +177,21 @@
                                 (hc/request->map round-tripped-request)))))}]})
 
 (def response->map-tests
-  {:on "response->map"
-   :tests [{:aspect "returns a map"
+  {:on    "response->map"
+   :tests [{:aspect  "returns a map"
             :test-fn (fn [is]
                        (is (map? (hc/response->map! (js/Response. (pr-str {:thing "another" :answer 42}))))))}
-           {:aspect "returns a map that contains right values"
+           {:aspect  "returns a map that contains right values"
             :test-fn (fn [is]
                        (let [sample-status-text "Passed!"
                              sample-status 200
                              sample-body (pr-str {:thing "another" :answer 42})
-                             sample-headers {:foo "bar"
+                             sample-headers {:foo   "bar"
                                              :thing "another"}
                              sample-init {:statusText sample-status-text
-                                          :status sample-status
-                                          :foo "bar"
-                                          :headers sample-headers}
+                                          :status     sample-status
+                                          :foo        "bar"
+                                          :headers    sample-headers}
                              converted-map (hc/response->map! (js/Response.
                                                                 sample-body (clj->js sample-init)))]
                          (is (and (= (:status converted-map) sample-status)
@@ -199,19 +199,50 @@
                                   (= (:headers sample-headers))))))}]})
 
 (def map->response-tests
-  {:on "map->request"
-   :tests [{:aspect "constructs a response correctly"
+  {:on    "map->request"
+   :tests [{:aspect  "constructs a response correctly"
             :test-fn (fn [is]
                        (let [sample-status-text "Yes, did it"
                              sample-status 201
-                             sample-body (pr-str {:whatever "floats" :your [\b\o\a\t]})
+                             sample-body (pr-str {:whatever "floats" :your [\b \o \a \t]})
                              sample-param {:statusText sample-status-text
-                                           :status sample-status
-                                           :body sample-body}
+                                           :status     sample-status
+                                           :body       sample-body}
                              constructed-response (hc/map->response! sample-param)]
                          (println "response is " constructed-response)
                          (is (and (= (.-status constructed-response) sample-status)))))}]})
+
 (def simple-text-url "/simple.txt")
+(def never-cache-url "/rand/never-cached.txt")
+(def always-cache-url "/rand/always-cached.txt")
+(def cache-updates-url "/rand/cache-updates.txt")
+
+(defn fetch-equiv-test
+  "Takes the assertion function, the url to call, and the number of times the url should be called."
+  [is sample-url samples]
+  (let [uni-chan (async/chan samples)
+        fetch-it-fn (fn [] (-> (js/fetch sample-url) (.then #(.text %)) (.then #(async/put! uni-chan %))))
+        reduced-chan (async/into #{} (async/take samples uni-chan))]
+    (doall (map fetch-it-fn (range 0 samples)))
+    (async/go
+      (let [the-set (async/<! reduced-chan)]
+        (println "the set is " the-set)
+        (is (count the-set))))))
+
+(def service-worker-caching-tests
+  {:on    "Service Worker Networking"
+   :tests [{:aspect       "correctly passes non-cached data through."
+            :testing-args [never-cache-url 30]
+            :should-be    30                                ;assures that we are, in fact, getting a substantial amount of data through.
+            :test-fn      fetch-equiv-test}
+           {:aspect       "correctly caches data"
+            :testing-args [always-cache-url 30]
+            :should-be    1                                 ;assures that all the data received is identical.
+            :test-fn      fetch-equiv-test}
+           {:aspect       "gets the fastest response between cache and server. Always fails. Set simulated ping between 15 and 30 to see differences."
+            :testing-args [cache-updates-url 30]
+            :should-be    29                                ;assures that all the data received is identical.
+            :test-fn      fetch-equiv-test}]})
 
 
 ;(def fetch-tests
@@ -235,7 +266,8 @@
 
 
 (def all-tests
-  [map->response-tests
+  [service-worker-caching-tests
+   map->response-tests
    response->map-tests
    map->request->map-tests
    map->request-tests

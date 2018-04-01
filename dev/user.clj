@@ -12,7 +12,8 @@
    [:head
     [:meta {:charset "UTF-8"}]
     [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
-    [:link {:href "style.css" :rel "stylesheet" :type "text/css"}]]
+    [:link {:href "style.css" :rel "stylesheet" :type "text/css"}]
+    [:link {:href "worker.js" :rel "preload" :type "text/javascript"}]]
    [:body
     [:div {:id "app"}
      [:h2 "Pre-JS Template"]]
@@ -27,6 +28,11 @@
   {:status  200
    :headers {"Content-type" "text/css"}
    :body    (gardener/compile-style)})
+
+(defn rand-handler [request]
+  {:status  200
+   :headers {"Content-type" "text/plain"}
+   :body    (pr-str (take 5 (repeatedly #(rand-int 999))))}) ;Probably won't return the same sequence. Probably.
 
 (defn main-js-handler [request]
   {:status  200
@@ -50,6 +56,7 @@
      :cljsbuild    {:source-paths ["src" "client-test"]
                     :incremental  true
                     :compiler     {:optimizations  :none
+                                   ;:optimizations  :advanced
                                    :cache-analysis true
                                    :pretty-print   false
                                    :warnings       true
@@ -67,6 +74,7 @@
      :cljsbuild    {:source-paths ["src" "worker-test"]
                     :incremental  true
                     :compiler     {:optimizations  :none
+                                   ;:optimizations  :advanced
                                    :cache-analysis true
                                    :pretty-print   false
                                    :warnings       true
@@ -76,12 +84,15 @@
 
 
 (def handler
-  (bring/make-handler ["" {"/js/"       {true (main-js-builder handler)}
-                           "/worker.js" (worker-js-builder handler)
-                           "/out/"      {true (worker-js-builder handler)}
-                           "/"          {#{"" "index.html"} index-handler
-                                         "style.css"        style-handler
-                                         "simple.txt"       simple-txt-handler}}]))
+  (bring/make-handler ["/" {"js/"              {true (main-js-builder handler)}
+                            "worker.js"        (worker-js-builder handler)
+                            "out/"             {true (worker-js-builder handler)}
+                            #{"" "index.html"} index-handler
+                            "style.css"        style-handler
+                            "simple.txt"       simple-txt-handler
+                            "rand/"            {"always-cached.txt" rand-handler
+                                                "never-cached.txt"  rand-handler
+                                                "cache-updates.txt" rand-handler}}]))
 
 
 

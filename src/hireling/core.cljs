@@ -1,14 +1,17 @@
 (ns hireling.core
   (:require [clojure.core.async :as async]
-            [clojure.walk :as walk]))
+            [clojure.walk :as walk]
+            [clojure.string :as str]
+            [oops.core :refer [oget oset! ocall oapply ocall! oapply!
+                               oget+ oset!+ ocall+ oapply+ ocall!+ oapply!+]]))
 
 (defn promise->chan! [promise]
   (let [resolved-promise (.resolve js/Promise promise)
         return-chan (async/chan)]
     (-> promise
         (.then (fn [a]
-                (async/go
-                  (async/>! return-chan a)))
+                 (async/go
+                   (async/>! return-chan a)))
                (fn [e]
                  (async/go
                    (async/>! return-chan {::rejection e})))))
@@ -89,30 +92,98 @@
 ;                              (fn [a] (async/>! return-chan a))))))
 ;    return-chan))
 
+(defn which-cache-strategy? [path cached-paths]
+  (let [cleaned-path (str/replace path (oget js/self :location :origin) "")]
+    (->> cached-paths
+         (filter (fn [[k vs]]
+                   (vs cleaned-path)))
+         (first)
+         (first))))
+
+(defn cache-the-response [resp-promise event]
+  (.then resp-promise
+         (fn [resp]
+           (let [clone-resp (.clone resp)]
+             (.then (.open js/caches (oget event :versionedCacheName))
+                    (fn [cache]
+                      (.put cache (oget event :request) clone-resp))))
+           resp)))
+
+(defn promise-from-cache [event]
+  (-> (.match js/caches (oget event :request))))
+
+(defn promise-from-network [event]
+  (js/fetch (oget event :request)))
+
+(defn network-with-cache [event]
+  (let [initial-promise (promise-from-network event)
+        return-chan (async/chan)]))
+
+
+(defn handle-cache-only [event]
+  (-> (promise-from-cache event)
+      (.then (fn [resp]
+               (if resp resp
+                        (promise-from-network event))))))
+
+(defn race-these
+  "Returns a chan with the first result put on to these chans."
+  [chan1 chan2]
+  (->> (async/merge [chan1 chan2])
+       (async/take 1)))
+
+(defn handle-cache-fastest [event]
+  (let [network-promise (cache-the-response (js/fetch (.-request event)) event)
+        cache-promise (promise-from-cache event)]
+    (chan->promise! (race-these (promise->chan! cache-promise) (promise->chan! network-promise)))))
+
+
+
+(defmulti promise-for-strat (fn [strat-key event] strat-key))
+(defmethod promise-for-strat nil [_ event] (promise-from-network event))
+(defmethod promise-for-strat :cache-only [_ event] (handle-cache-only event))
+(defmethod promise-for-strat :cache-fastest [_ event] (handle-cache-fastest event))
+(defmethod promise-for-strat :cache-never [_ event] (promise-from-network event))
+
+(defn default-on-fetch-handler [{:keys [event done-fn cached-paths cache-name version] :as event-params}]
+  (oset! event :!versionedCacheName (str cache-name "_" version))
+  (let [{:keys [cache-never cache-fastest cache-only]} cached-paths
+        cache-strat (which-cache-strategy? (.-url (.-request event)) cached-paths)]
+    (when cache-strat (println "provided cache strat is" cache-strat))
+    (-> event (.respondWith
+                (promise-for-strat cache-strat event)))))
+
 (defn register-worker [worker-file-path]
   (when (.-serviceWorker js/navigator)
     (.. js/navigator -serviceWorker (register worker-file-path))))
 
 (def default-worker {:version      1
                      :cache-name   "hireling-cache"
-                     :cached-paths [""]
-                     :on-install!  (fn [{:keys [event done-fn]}]
-                                     (println "No install declared for this service worker.")
-                                     (done-fn))
+                     :cached-paths {:cache-never   [""]
+                                    :cache-fastest [""]
+                                    :cache-only    [""]}
+                     :on-install!  (fn [{:keys [event done-fn version cache-name cached-paths]}]
+                                     (.skipWaiting js/self)
+                                     (println "host is " (.-host (.-location js/self)))
+                                     (let [{:keys [cache-never cache-fastest cache-only]} cached-paths]
+                                       (-> js/caches
+                                           (.open (str cache-name "_" version))
+                                           (.then (fn [cache]
+                                                    (println "attempting to cache "
+                                                             (clj->js (into cache-only cache-fastest)))
+                                                    (.then (.addAll cache (clj->js (into cache-only cache-fastest)))
+                                                           (fn [a] (done-fn))
+                                                           (fn [a] (done-fn {::rejection "Failed to add everything."}))))))
+                                       (println "No install declared for this service worker.")))
                      :on-activate! (fn [{:keys [event done-fn]}]
                                      (println "No activate declared for this worker.")
                                      (done-fn))
-                     :on-fetch!    (fn [{:keys [event done-fn]}]
-                                     (println "Got a fetch event! Event is " event)
-                                     #_(let [response-chan (async/chan)]
-                                           response-promise (.then (.match js/caches (.-request event))
-                                                                   (fn [response]
-                                                                     (println "actual response is " response)
-                                                                     (if response
-                                                                       (.respondWith event response)
-                                                                       (.respondWith event (js/fetch (.-request event)))))))
-                                     (-> event (.respondWith (js/fetch "/simple.txt"))))})
+                     :on-fetch!    default-on-fetch-handler})
 
+(defn path-vecs-to-sets [{:keys [cached-paths] :as combined-impl-map}]
+  (assoc combined-impl-map :cached-paths (into {} (map (fn [[k v]]
+                                                         {k (set v)})
+                                                       cached-paths))))
 
 (defn start-service-worker!
   "Starts the service worker with the provided options map."
@@ -127,7 +198,9 @@
                          ([a] (async/put! ch a))
                          ([a & bs] (async/put! ch (into [a] bs))))])
           (take 3 (repeatedly #(async/chan))))
-        {:keys [on-install! on-activate! on-fetch!] :as combined-impl-map} (into default-worker provided-impl-map)]
+        {:keys [on-install! on-activate! on-fetch!] :as combined-impl-map} (->> provided-impl-map
+                                                                                (into default-worker)
+                                                                                (path-vecs-to-sets))]
     (.addEventListener
       js/self "install"
       (fn [ev]

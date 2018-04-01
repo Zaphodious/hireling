@@ -31,7 +31,7 @@
         status (get-test-status test-def-map)
         error (::error result)]
     [:.test-result {:class (name status)
-                    :key (str aspect "-test")}
+                    :key   (str aspect "-test")}
      [(when testing [:.tested-thing testing])
       [:.aspect aspect]
       (when-not (or (= status :passing) (= status :waiting))
@@ -67,11 +67,11 @@
 (defn tests-on
   [{:keys [on tests] :as test-decs}]
   (let [fix-should-be (map
-                          (fn [a]
-                            (if (:should-be a)
-                              a
-                              (assoc a :should-be true)))
-                          tests)
+                        (fn [a]
+                          (if (:should-be a)
+                            a
+                            (assoc a :should-be true)))
+                        tests)
         results-pre-insert (map start-test fix-should-be)
         results (map #(assoc % :testing on) results-pre-insert)]
     (render-test-category (assoc test-decs :results results))))
@@ -94,9 +94,9 @@
                       :should-be    1
                       :test-fn      #(%1 (+ 1 %2))
                       :testing-args [2]}
-                     {:aspect "knows how to deal with no 'should be' and no 'testing-args' and passes on true"
+                     {:aspect  "knows how to deal with no 'should be' and no 'testing-args' and passes on true"
                       :test-fn #(% true)}
-                     {:aspect "knows how to deal with no 'should be' and no 'testing-args' and fails on false"
+                     {:aspect  "knows how to deal with no 'should be' and no 'testing-args' and fails on false"
                       :test-fn #(% false)}
                      {:aspect    "runs async tests"
                       :should-be 100000
