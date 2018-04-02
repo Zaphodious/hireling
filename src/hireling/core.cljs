@@ -135,8 +135,9 @@
 (defn handle-cache-only [event]
   (-> (promise-from-cache event)
       (.then (fn [resp]
+               (println "Handling request from " (oget event :request :url))
                (if resp resp
-                        (promise-from-network event))))))
+                        (cache-the-response (promise-from-network event) event))))))
 
 (defn race-these
   "Returns a chan with the first result put on to these chans."

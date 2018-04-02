@@ -77,11 +77,11 @@
                            ; and the url is not found within :cached-paths, its checked against :cache-conditional.
                            :cache-conditional {:cache-never   (fn [patho]
                                                                 (= ::hroutes/rand-all-uncached
-                                                                  (bidi/match-route hroutes/routemap (clean-testing-route patho))))
+                                                                  (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))
                                                :cache-fastest (constantly false)
                                                :cache-only    (fn [patho]
                                                                 (= ::hroutes/rand-all-cached
-                                                                   (bidi/match-route hroutes/routemap (clean-testing-route patho))))}
+                                                                   (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))}
 
                            ; The :send-later option handles POST and PUT requests, and accepts a map of
                            ; {fn (urlstring)->boolean, [frequencey-of-request, max-requests] }. If the function evals
