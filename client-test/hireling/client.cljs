@@ -8,7 +8,7 @@
 
 (defonce app-state (atom {:text "Hello world!"}))
 
-(hireling/register-worker "worker.js")
+(hireling/register-service-worker "worker.js")
 
 (rum/defc hello-world []
   [(map tester/tests-on client-tests/all-tests)

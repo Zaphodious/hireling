@@ -237,7 +237,7 @@
             :testing-args [always-cache-url 30]
             :should-be    1                                 ;assures that all the data received is identical.
             :test-fn      fetch-equiv-test}
-           {:aspect       "gets the fastest response between cache and server. Set simulated ping between 15 and 30 to see differences."
+           {:aspect       "gets the fastest response between cache and server. Result will usually be 1 or 30, but as the cache updates the number will occasionally go somewhere in between."
             :testing-args [fastest-cache-url 30]
             :non-deterministic true                             ;assures that all the data received is identical.
             :test-fn      fetch-equiv-test}]})
@@ -257,7 +257,7 @@
                            30]
             :should-be 1
             :test-fn fetch-equiv-test}
-           {:aspect "correctly races for :cache-fastest. Set simulated ping to around 20 and reload the page several times."
+           {:aspect "correctly races for :cache-fastest. Result will usually be 1 or 30, but as the cache updates the number will occasionally go somewhere in between."
             :non-deterministic true
             :testing-args [(str rand-all-url-base "fastest/" (gensym "faster"))
                            30]

@@ -151,28 +151,28 @@
 
 (defmulti promise-for-strat (fn [strat-key event] strat-key))
 (defmethod promise-for-strat nil [_ event] (promise-from-network event))
-(defmethod promise-for-strat :cache-only [_ event] (handle-cache-only event))
+(defmethod promise-for-strat :cache-first [_ event] (handle-cache-only event))
 (defmethod promise-for-strat :cache-fastest [_ event] (handle-cache-fastest event))
 (defmethod promise-for-strat :cache-never [_ event] (promise-from-network event))
 
 (defn default-on-fetch-handler [{:keys [event done-fn cached-paths cache-name version cache-conditional] :as event-params}]
   (oset! event :!versionedCacheName (str cache-name "_" version))
-  (let [{:keys [cache-never cache-fastest cache-only]} cached-paths
+  (let [{:keys [cache-never cache-fastest cache-first]} cached-paths
         cache-strat (which-cache-strategy? (.-url (.-request event)) cached-paths cache-conditional)]
     (-> event (.respondWith
                 (promise-for-strat cache-strat event)))))
 
 (defn default-on-install-handler [{:keys [event done-fn version cache-name cached-paths]}]
   (.skipWaiting js/self)
-  (let [{:keys [cache-never cache-fastest cache-only]} cached-paths]
+  (let [{:keys [cache-never cache-fastest cache-first]} cached-paths]
     (-> js/caches
         (.open (str cache-name "_" version))
         (.then (fn [cache]
-                 (.then (.addAll cache (clj->js (into cache-only cache-fastest)))
+                 (.then (.addAll cache (clj->js (into cache-first cache-fastest)))
                         (fn [a] (done-fn))
                         (fn [a] (done-fn {::rejection "Failed to add everything."}))))))))
 
-(defn register-worker [worker-file-path]
+(defn register-service-worker [worker-file-path]
   (when (.-serviceWorker js/navigator)
     (.. js/navigator -serviceWorker (register worker-file-path))))
 
@@ -180,7 +180,7 @@
                      :cache-name   "hireling-cache"
                      :cached-paths {:cache-never   [""]
                                     :cache-fastest [""]
-                                    :cache-only    [""]}
+                                    :cache-first   [""]}
                      :on-install!  default-on-install-handler
                      :on-activate! (fn [{:keys [event done-fn]}]
                                      (done-fn))
