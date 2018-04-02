@@ -22,7 +22,6 @@
                              test-promise (.resolve js/Promise test-value)
                              successful-chan (hc/promise->chan! test-promise)]
                          (let [equaltest (fn [a]
-                                           (println "succeeds with a " a)
                                            (is (= test-value a)))]
                            (async/take! successful-chan equaltest))))}
            {:aspect    "returns a channel that deals with rejection"
@@ -154,7 +153,6 @@
                                        :headers {:foo "too"}
                                        :cache   "no-cache"}
                              requi (hc/map->request test-map)]
-                         (println "headers are " (walk/keywordize-keys (into {} (map vec (es6-iterator-seq (.entries (.-headers requi)))))))
                          (is (and (= (.-url requi) (:url test-map))
                                   (= (.-method requi) (:method test-map))
                                   (= (.-cache requi) (:cache test-map))
@@ -211,7 +209,6 @@
                                            :status     sample-status
                                            :body       sample-body}
                              constructed-response (hc/map->response! sample-param)]
-                         (println "response is " constructed-response)
                          (is (and (= (.-status constructed-response) sample-status)))))}]})
 
 (def simple-text-url (bidi/path-for hroutes/routemap ::hroutes/simple-txt))
@@ -228,7 +225,6 @@
     (doall (map fetch-it-fn (range 0 samples)))
     (async/go
       (let [the-set (async/<! reduced-chan)]
-        (println "the set is " the-set)
         (is (count the-set))))))
 
 (def service-worker-cache-paths-test

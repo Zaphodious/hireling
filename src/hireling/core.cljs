@@ -67,7 +67,6 @@
      :body-used     (.-bodyUsed response-object)}))
 
 (defn map->response! [{:keys [body headers] :as response-map :or {headers {}, body ""}}]
-  (println "the headers are " headers)
   (js/Response. body (-> response-map
                          (dissoc :body)
                          (assoc :headers (map->headers headers))
@@ -108,7 +107,6 @@
                                 k nil)))
                           (filter #(not (nil? %)))
                           first))]
-    (println "caching strat for " path " is " full-match)
     full-match))
 
 
@@ -135,7 +133,6 @@
 (defn handle-cache-only [event]
   (-> (promise-from-cache event)
       (.then (fn [resp]
-               (println "Handling request from " (oget event :request :url))
                (if resp resp
                         (cache-the-response (promise-from-network event) event))))))
 
@@ -162,23 +159,18 @@
   (oset! event :!versionedCacheName (str cache-name "_" version))
   (let [{:keys [cache-never cache-fastest cache-only]} cached-paths
         cache-strat (which-cache-strategy? (.-url (.-request event)) cached-paths cache-conditional)]
-    (when cache-strat (println "provided cache strat is" cache-strat))
     (-> event (.respondWith
                 (promise-for-strat cache-strat event)))))
 
 (defn default-on-install-handler [{:keys [event done-fn version cache-name cached-paths]}]
   (.skipWaiting js/self)
-  (println "host is " (.-host (.-location js/self)))
   (let [{:keys [cache-never cache-fastest cache-only]} cached-paths]
     (-> js/caches
         (.open (str cache-name "_" version))
         (.then (fn [cache]
-                 (println "attempting to cache "
-                          (clj->js (into cache-only cache-fastest)))
                  (.then (.addAll cache (clj->js (into cache-only cache-fastest)))
                         (fn [a] (done-fn))
-                        (fn [a] (done-fn {::rejection "Failed to add everything."}))))))
-    (println "No install declared for this service worker.")))
+                        (fn [a] (done-fn {::rejection "Failed to add everything."}))))))))
 
 (defn register-worker [worker-file-path]
   (when (.-serviceWorker js/navigator)
@@ -191,7 +183,6 @@
                                     :cache-only    [""]}
                      :on-install!  default-on-install-handler
                      :on-activate! (fn [{:keys [event done-fn]}]
-                                     (println "No activate declared for this worker.")
                                      (done-fn))
                      :on-fetch!    default-on-fetch-handler})
 

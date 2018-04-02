@@ -8,8 +8,6 @@
 
 (enable-console-print!)
 
-(println "Service Worker loads.")
-
 (defn clean-testing-route [patho] (str/replace patho (oget js/self :location :origin) ""))
 
 (hc/start-service-worker! {; As service workers are updated in the browser when the file itself is byte-different
