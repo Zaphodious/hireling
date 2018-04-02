@@ -78,7 +78,9 @@
                            :cache-conditional {:cache-never   (fn [patho]
                                                                 (= ::hroutes/rand-all-uncached
                                                                   (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))
-                                               :cache-fastest (constantly false)
+                                               :cache-fastest (fn [patho]
+                                                                (= ::hroutes/rand-all-fastest-cached
+                                                                   (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))
                                                :cache-only    (fn [patho]
                                                                 (= ::hroutes/rand-all-cached
                                                                    (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))}

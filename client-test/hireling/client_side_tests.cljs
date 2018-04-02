@@ -260,7 +260,13 @@
             :testing-args [(str rand-all-url-base "allcached/" (gensym "always"))
                            30]
             :should-be 1
+            :test-fn fetch-equiv-test}
+           {:aspect "correctly races for :cache-fastest. Set simulated ping to around 20 and reload the page several times."
+            :non-deterministic true
+            :testing-args [(str rand-all-url-base "fastest/" (gensym "faster"))
+                           30]
             :test-fn fetch-equiv-test}]})
+
 
 
 (def all-tests
