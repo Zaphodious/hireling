@@ -54,7 +54,9 @@
                                                ; css, images, and anything else that might change but should
                                                ; arrive quickly in the browser. Resilient against low or no
                                                ; connectivity.
-                                               :cache-fastest [(bidi/path-for hroutes/routemap ::hroutes/fastest-cache-txt)]
+                                               :cache-fastest [(bidi/path-for hroutes/routemap ::hroutes/fastest-cache-txt)
+                                                               (bidi/path-for hroutes/routemap ::hroutes/index)
+                                                               (bidi/path-for hroutes/routemap ::hroutes/style)]
 
                                                ; Paths under :cache-only are cached once and not updated, though a
                                                ; cache miss will get the resource from the network.
@@ -72,8 +74,8 @@
                                                                 (= ::hroutes/rand-all-uncached
                                                                    (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))
                                                :cache-fastest (fn [patho]
-                                                                (= ::hroutes/rand-all-fastest-cached
-                                                                   (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))
+                                                                (#{::hroutes/main-js ::hroutes/rand-all-fastest-cached}
+                                                                  (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))
                                                :cache-first   (fn [patho]
                                                                 (= ::hroutes/rand-all-cached
                                                                    (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))}
