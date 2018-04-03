@@ -137,10 +137,16 @@
                         (cache-the-response (promise-from-network event) event))))))
 
 (defn race-these
-  "Returns a chan with the first result put on to these chans."
-  [chan1 chan2]
-  (->> (async/merge [chan1 chan2])
-       (async/take 1)))
+  "Returns a chan with the first result put on to these chans. Optional 'validity-fn'
+  ensures that a non-valid result doesn't cause the race to end. Defaults to
+  checking that a chan from promise->chan doesn't end the race on a promise rejection."
+  ([chan1 chan2] (race-these chan1 chan2 (fn [thing] (not (and (map? thing)
+                                                               (::rejection thing))))))
+  ([chan1 chan2 validity-fn]
+   (let [return-chan (async/chan 1 (filter validity-fn))]
+     (async/pipe (async/merge [chan1 chan2]) return-chan)
+     (->> (async/pipe (async/merge [chan1 chan2]) return-chan)
+          (async/take 1)))))
 
 (defn handle-cache-fastest [event]
   (let [network-promise (cache-the-response (js/fetch (.-request event)) event)
@@ -173,7 +179,7 @@
                         (fn [a] (done-fn {::rejection "Failed to add everything."}))))))))
 
 (defn register-service-worker [worker-file-path]
-  (when (.-serviceWorker js/navigator)
+  (when (and (.-serviceWorker js/navigator) js/caches)
     (.. js/navigator -serviceWorker (register worker-file-path))))
 
 (def default-worker {:version      1
@@ -183,6 +189,7 @@
                                     :cache-first   [""]}
                      :on-install!  default-on-install-handler
                      :on-activate! (fn [{:keys [event done-fn]}]
+                                     (.claim js/clients)
                                      (done-fn))
                      :on-fetch!    default-on-fetch-handler})
 
