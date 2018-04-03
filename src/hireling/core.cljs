@@ -137,16 +137,12 @@
                         (cache-the-response (promise-from-network event) event))))))
 
 (defn race-these
-  "Returns a chan with the first result put on to these chans. Optional 'validity-fn'
-  ensures that a non-valid result doesn't cause the race to end. Defaults to
-  checking that a chan from promise->chan doesn't end the race on a promise rejection."
-  ([chan1 chan2] (race-these chan1 chan2 (fn [thing] (not (and (map? thing)
-                                                               (::rejection thing))))))
-  ([chan1 chan2 validity-fn]
-   (let [return-chan (async/chan 1 (filter validity-fn))]
-     (async/pipe (async/merge [chan1 chan2]) return-chan)
-     (->> (async/pipe (async/merge [chan1 chan2]) return-chan)
-          (async/take 1)))))
+  ([chan1 chan2] (race-these chan1 chan2 #(not (::rejection %))))
+  ([chan1 chan2 filter-fn]
+   (let [return-chan (async/chan 1 (filter filter-fn))]
+      (async/pipe chan1 return-chan)
+      (async/pipe chan2 return-chan)
+      (async/take 1 return-chan))))
 
 (defn handle-cache-fastest [event]
   (let [network-promise (cache-the-response (js/fetch (.-request event)) event)
@@ -169,7 +165,7 @@
                 (promise-for-strat cache-strat event)))))
 
 (defn default-on-install-handler [{:keys [event done-fn version cache-name cached-paths]}]
-  (.skipWaiting js/self)
+  ;(.skipWaiting js/self)
   (let [{:keys [cache-never cache-fastest cache-first]} cached-paths]
     (-> js/caches
         (.open (str cache-name "_" version))
@@ -189,7 +185,7 @@
                                     :cache-first   [""]}
                      :on-install!  default-on-install-handler
                      :on-activate! (fn [{:keys [event done-fn]}]
-                                     (.claim js/clients)
+                                     ;(.claim js/clients)
                                      (done-fn))
                      :on-fetch!    default-on-fetch-handler})
 

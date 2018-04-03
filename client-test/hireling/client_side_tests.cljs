@@ -211,6 +211,29 @@
                              constructed-response (hc/map->response! sample-param)]
                          (is (and (= (.-status constructed-response) sample-status)))))}]})
 
+(defn chan-race-test
+  [is winning-val losing-val]
+  (let [achan1 (async/chan)
+        achan2 (async/chan)
+        rando (rand-int 999)
+        race-chan (hc/race-these achan1 achan2)]
+    (println "race chan is " race-chan)
+    (async/put! achan1 winning-val)
+    (async/put! achan2 losing-val)
+    (async/take! race-chan is)))
+
+(def chan-racing-tests
+  {:on "race-these"
+   :tests [{:aspect "Correctly races valid values."
+            :test-fn chan-race-test
+            :testing-args [:a :b]
+            :should-be :a}
+           {:aspect (str "Correctly ignores responses that are maps with the key " ::hc/rejection)
+            :test-fn chan-race-test
+            :testing-args [{::hc/rejection true} :should-be]
+            :should-be :should-be}]})
+
+
 (def simple-text-url (bidi/path-for hroutes/routemap ::hroutes/simple-txt))
 (def never-cache-url (bidi/path-for hroutes/routemap ::hroutes/never-cache-txt))
 (def always-cache-url (bidi/path-for hroutes/routemap ::hroutes/always-cache-txt))
@@ -268,6 +291,7 @@
 (def all-tests
   [service-worker-cache-conditional-tests
    service-worker-cache-paths-test
+   chan-racing-tests
    map->response-tests
    response->map-tests
    map->request->map-tests
