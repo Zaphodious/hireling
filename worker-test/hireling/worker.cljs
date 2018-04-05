@@ -71,7 +71,9 @@
                                            :route (fn [patho]
                                                     (println "patho is " patho)
                                                     (= ::hroutes/rand-all-cached
-                                                       (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))}]
+                                                       (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))}
+                                          {:strategy :cache-first
+                                           :route #"rand/all/regexd"}]
 
                            :precached-paths   {; Paths under :cache-never are never cached. Offline
                                                ; availability is the responsibility of the main app. Suitable

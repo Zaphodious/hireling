@@ -44,6 +44,10 @@
             :testing-args [(str rand-all-url-base "allcached/" (gensym "always")) 30]
             :should-be    1                                 ;assures that all the data received is identical.
             :test-fn      fetch-equiv-test}
+           {:aspect       "correctly caches :cache-first regex routes"
+            :testing-args [(str rand-all-url-base "regexd/" (gensym "always")) 30]
+            :should-be    1                                 ;assures that all the data received is identical.
+            :test-fn      fetch-equiv-test}
            {:aspect       "correctly caches :stale-while-revalidate."
             :testing-args [fastest-cache-url 30]
             :should-be 1

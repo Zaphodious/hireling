@@ -15,4 +15,5 @@
                              "all/" {"" ::rand-all
                                      "uncached/" {true ::rand-all-uncached}
                                      "allcached/" {true ::rand-all-cached}
-                                     "fastest/" {true ::rand-all-fastest-cached}}}}])
+                                     "fastest/" {true ::rand-all-fastest-cached}
+                                     "regexd/" {true ::rand-regex}}}}])
