@@ -7,7 +7,8 @@
 (enable-console-print!)
 
 
-(defn clean-testing-route [patho] (str/replace patho (-> js/self .-location .-origin) ""))
+(defn clean-testing-route [patho] (str/replace (.toString (.-url patho)) ^js/string (.toString (-> js/self .-location .-origin))
+                                               ""))
 
 (hc/start-service-worker! {; As service workers are updated in the browser when the file itself is byte-different
                            ; to a previous version, (and if you're including shared code with your sw build, it will
@@ -65,7 +66,13 @@
                                            ; additional options are #{:PUT :POST :DELETE :HEAD}
                                            :method :GET}
                                           {:strategy :cache-first
-                                           :route (bidi/path-for hroutes/routemap ::hroutes/always-cache-txt)}]
+                                           :route (bidi/path-for hroutes/routemap ::hroutes/always-cache-txt)}
+                                          {:strategy :cache-first
+                                           :route (fn [patho]
+                                                    (println "patho is " patho)
+                                                    (= ::hroutes/rand-all-cached
+                                                       (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))}]
+
                            :precached-paths   {; Paths under :cache-never are never cached. Offline
                                                ; availability is the responsibility of the main app. Suitable
                                                ; only for resources that are managed by the main app. It is the

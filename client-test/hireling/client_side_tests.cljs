@@ -12,6 +12,7 @@
 (def never-cache-url (bidi/path-for hroutes/routemap ::hroutes/never-cache-txt))
 (def always-cache-url (bidi/path-for hroutes/routemap ::hroutes/always-cache-txt))
 (def fastest-cache-url (bidi/path-for hroutes/routemap ::hroutes/fastest-cache-txt))
+(def rand-all-url-base (bidi/path-for hroutes/routemap ::hroutes/rand-all))
 
 (defn fetch-equiv-test
   "Takes the assertion function, the url to call, and the number of times the url should be called."
@@ -25,21 +26,30 @@
         (is (count the-set))))))
 
 (def service-worker-cache-paths-test
-  {:on    "Service Worker Cached-Paths System"
+  {:on    "Service Worker :cache-routes "
    :tests [{:aspect       "correctly passes non-cached data through."
             :testing-args [never-cache-url 30]
             :should-be    30                                ;assures that we are, in fact, getting a substantial amount of data through.
             :test-fn      fetch-equiv-test}
-           {:aspect       "correctly caches data"
+           {:aspect "also for function routes"
+            :testing-args [(str rand-all-url-base "uncached/" (gensym "never"))
+                           30]
+            :should-be 30
+            :test-fn fetch-equiv-test}
+           {:aspect       "correctly caches :cache-first string routes"
             :testing-args [always-cache-url 30]
             :should-be    1                                 ;assures that all the data received is identical.
             :test-fn      fetch-equiv-test}
-           {:aspect       "gets the fastest response between cache and server. Result will usually be 1 or 30, but as the cache updates the number will occasionally go somewhere in between."
+           {:aspect       "correctly caches :cache-first function routes"
+            :testing-args [(str rand-all-url-base "allcached/" (gensym "always")) 30]
+            :should-be    1                                 ;assures that all the data received is identical.
+            :test-fn      fetch-equiv-test}
+           {:aspect       "correctly caches :stale-while-revalidate."
             :testing-args [fastest-cache-url 30]
-            :non-deterministic true                             ;assures that all the data received is identical.
+            :should-be 1
             :test-fn      fetch-equiv-test}]})
 
-(def rand-all-url-base (bidi/path-for hroutes/routemap ::hroutes/rand-all))
+
 
 (def service-worker-cache-conditional-tests
   {:on "Service Worker Cache-Conditional System"
