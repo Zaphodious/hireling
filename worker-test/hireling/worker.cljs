@@ -29,25 +29,15 @@
                            ; of your files might be served depending on how often *those* caches are updated.
                            :version           2
 
-
-                           ; App-specific name for your cache. The :version number will be appended before cache
-                           ; creation.
-                           :cache-name        "hireling-test-cache"
-
-
-                           ; The :cached-paths entry takes, under various options, vectors
-                           ; of path strings that are cached when the Service Worker loads and
-                           ; returned (depending on the option's intent) when the main app requests
-                           ; them. Note that these names are likely to change.
-                           :precache-urls [(str "http://localhost:3000" (bidi/path-for hroutes/routemap ::hroutes/fastest-cache-txt))]
-                           :precache-options {}
+                           ; Name of the app. Used to create the cache name, along with the version number.
+                           :app-name "hireling-test"
                            ; Takes a vector of maps that will be used to determine the service worker's caching behavior.
                            :cache-routes [{; Strategy the route will use to determine caches. Options
                                            ; are #{:cache-first :cache-only :network-first :network-only :stale-while-revalidate},
                                            ; which correspond to the options
                                            ; in https://developers.google.com/web/tools/workbox/reference-docs/latest/workbox.strategies
                                            ; Note - :cache-only is somewhat dangerous, as without special handlers
-                                           ; the user will not be able to get the
+                                           ; the user will not be able to get the asset *at all*.
                                            :strategy :stale-while-revalidate
 
                                            ; (Optional) options that modify the strategy. See
@@ -73,50 +63,13 @@
                                                     (= ::hroutes/rand-all-cached
                                                        (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))}
                                           {:strategy :cache-first
-                                           :route #"rand/all/regexd"}]
-
-                           :precached-paths   {; Paths under :cache-never are never cached. Offline
-                                               ; availability is the responsibility of the main app. Suitable
-                                               ; only for resources that are managed by the main app. It is the
-                                               ; responsibility of the originating server to ensure that proper
-                                               ; no-caching headers are included, as occasionally a browser might
-                                               ; still impose its own cache.
-                                               :cache-never   [(bidi/path-for hroutes/routemap ::hroutes/never-cache-txt)]
-
-                                               ; Paths under :cache-fastest are cached, requests are returned from the
-                                               ; faster of the cache or network, and the values are updated regularly,
-                                               ; once per day or when a network request succeeds (even if it loses
-                                               ; to the cache). Best option for the app shell, compiled javascript,
-                                               ; css, images, and anything else that might change but should
-                                               ; arrive quickly in the browser. Resilient against low or no
-                                               ; connectivity.
-                                               :cache-fastest [(bidi/path-for hroutes/routemap ::hroutes/fastest-cache-txt)
-                                                               (bidi/path-for hroutes/routemap ::hroutes/index)
-                                                               (bidi/path-for hroutes/routemap ::hroutes/style)]
-
-                                               ; Paths under :cache-only are cached once and not updated, though a
-                                               ; cache miss will get the resource from the network.
-                                               ; Should only be used for expensive-to-get and never-changing resources
-                                               ; like large files, as :cache-fastest provides insurance against disk
-                                               ; access being slow *and* it frequently updates.
-                                               :cache-first   [(bidi/path-for hroutes/routemap ::hroutes/always-cache-txt)]}
-
-
-                           ; The :cache-conditional entry takes the same options as :cached-paths,
-                           ; but instead of a vector of path strings each option maps to a function taking
-                           ; the request path and returning a boolean. Any time a request is made
-                           ; and the url is not found within :cached-paths, its checked against :cache-conditional.
-                           :cache-conditional {:cache-never   (fn [patho]
-                                                                (= ::hroutes/rand-all-uncached
-                                                                   (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))
-                                               :cache-fastest (fn [patho]
-                                                                (or
-                                                                  (#{::hroutes/main-js ::hroutes/rand-all-fastest-cached}
-                                                                    (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho))))
-                                                                  (str/includes? patho "workbox-cdn")))
-                                               :cache-first   (fn [patho]
-                                                                (= ::hroutes/rand-all-cached
-                                                                   (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))}
+                                           :route #"rand/all/regexd"}
+                                          {:strategy :stale-while-revalidate
+                                           :route "/"}
+                                          {:strategy :stale-while-revalidate
+                                           :route #".js"}
+                                          {:strategy :stale-while-revalidate
+                                           :route #".css"}]
 
                            ; The :send-later option will handle POST and PUT requests, and accepts a map of
                            ; {fn (urlstring)->boolean, [frequencey-of-request, max-requests] }. If the function evals

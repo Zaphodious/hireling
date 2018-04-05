@@ -71,17 +71,18 @@
 (defn- update-cache-name-as [cache-name]
   (fn [a] (update-in a [:strategy-options :cache-name] (fn [b] (if b b cache-name)))))
 
-(defn make-cache-name [base-cache-name version-number]
-  (str "hireling-client." base-cache-name ".v" version-number))
+(defn make-cache-name [app-name version-number]
+  (str "hireling-client." app-name ".v" version-number))
 
 
-(defn start-service-worker! [{:keys [workbox-uri workbox-uri-prefix cache-routes cache-name version] :as provided-impl-map}]
+(defn start-service-worker! [{:keys [workbox-uri workbox-uri-prefix cache-routes cache-name version
+                                     app-name :as provided-impl-map]}]
   (enable-console-print!)
   (if workbox-uri (load-workbox workbox-uri workbox-uri-prefix) (load-workbox))
-  (let [update-cache-name (fn [a] (update-in a [:strategy-options :cache-name] (fn [b] (if b b (make-cache-name cache-name version)))))
-
-        cache-entries cache-routes]
+  (let [cache-entries cache-routes]
     (println "\uD83C\uDF88\uD83C\uDF88\uD83C\uDF88 These are " cache-entries)
+    (set-cache-name-details! {:prefix app-name :suffix (str "v" version)
+                              :precache "precache" :runtime "runtimecache"})
     (doall (map register-route! cache-entries))))
 
 
