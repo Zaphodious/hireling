@@ -60,6 +60,7 @@
                     :incremental  true
                     :compiler     {:optimizations  :none
                                    ;:optimizations  :advanced
+                                   :infer-externs true
                                    :cache-analysis true
                                    :pretty-print   false
                                    :warnings       true
@@ -76,8 +77,9 @@
      :source-map   true
      :cljsbuild    {:source-paths ["src" "worker-test"]
                     :incremental  true
-                    :compiler     {:optimizations  :none
-                                   ;:optimizations  :advanced
+                    :compiler     {;:optimizations  :none
+                                   :optimizations  :advanced
+                                   :infer-externs true
                                    :cache-analysis true
                                    :pretty-print   false
                                    :warnings       true
@@ -128,3 +130,5 @@
   (do
     (stop)
     (start)))
+
+;(ocall workbox :precaching :precacheAndRoute cache-fastest (ocall workbox :strategies :staleWhileRevalidate)))

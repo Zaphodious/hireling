@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/clojurescript "1.10.238"]
                  [org.clojure/core.async "0.4.474"]
-                 [binaryage/oops "0.5.8"]]
+                 [camel-snake-kebab "0.4.0"]]
 
   :source-paths ["src"]
   :test-paths ["client-test" "worker-test" "dev"]

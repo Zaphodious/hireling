@@ -2,13 +2,12 @@
   (:require [hireling.core :as hc]
             [bidi.bidi :as bidi]
             [hireling.routes :as hroutes]
-            [clojure.string :as str]
-            [oops.core :refer [oget oset! ocall oapply ocall! oapply!
-                               oget+ oset!+ ocall+ oapply+ ocall!+ oapply!+]]))
+            [clojure.string :as str]))
 
 (enable-console-print!)
 
-(defn clean-testing-route [patho] (str/replace patho (oget js/self :location :origin) ""))
+
+(defn clean-testing-route [patho] (str/replace patho (-> js/self .-location .-origin) ""))
 
 (hc/start-service-worker! {; As service workers are updated in the browser when the file itself is byte-different
                            ; to a previous version, (and if you're including shared code with your sw build, it will
@@ -39,7 +38,35 @@
                            ; of path strings that are cached when the Service Worker loads and
                            ; returned (depending on the option's intent) when the main app requests
                            ; them. Note that these names are likely to change.
-                           :cached-paths      {; Paths under :cache-never are never cached. Offline
+                           :precache-urls [(str "http://localhost:3000" (bidi/path-for hroutes/routemap ::hroutes/fastest-cache-txt))]
+                           :precache-options {}
+                           ; Takes a vector of maps that will be used to determine the service worker's caching behavior.
+                           :cache-routes [{; Strategy the route will use to determine caches. Options
+                                           ; are #{:cache-first :cache-only :network-first :network-only :stale-while-revalidate},
+                                           ; which correspond to the options
+                                           ; in https://developers.google.com/web/tools/workbox/reference-docs/latest/workbox.strategies
+                                           ; Note - :cache-only is somewhat dangerous, as without special handlers
+                                           ; the user will not be able to get the
+                                           :strategy :stale-while-revalidate
+
+                                           ; (Optional) options that modify the strategy. See
+                                           ; https://developers.google.com/web/tools/workbox/reference-docs/latest/workbox.strategies
+                                           :strategy-options {; Name of cache to use for caching (both lookup and updating).
+                                                              ; If falsy, reverts to the main :cache-name
+                                                              :cache-name nil
+                                                              ; The maximum number of entries to store in a cache.
+                                                              :max-entries 1
+                                                              ; The maximum lifetime of a request to stay in the cache before it's removed.
+                                                              :max-age-seconds (* 60 60 2)}
+                                           ; Route is a string, regex, or predicate function used to match a request
+                                           ; to its cache entry and caching strategy.
+                                           :route (bidi/path-for hroutes/routemap ::hroutes/fastest-cache-txt)
+                                           ; Method is the HTTP method that will be listened for. Defaults to :GET,
+                                           ; additional options are #{:PUT :POST :DELETE :HEAD}
+                                           :method :GET}
+                                          {:strategy :cache-first
+                                           :route (bidi/path-for hroutes/routemap ::hroutes/always-cache-txt)}]
+                           :precached-paths   {; Paths under :cache-never are never cached. Offline
                                                ; availability is the responsibility of the main app. Suitable
                                                ; only for resources that are managed by the main app. It is the
                                                ; responsibility of the originating server to ensure that proper
@@ -74,8 +101,10 @@
                                                                 (= ::hroutes/rand-all-uncached
                                                                    (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))
                                                :cache-fastest (fn [patho]
-                                                                (#{::hroutes/main-js ::hroutes/rand-all-fastest-cached}
-                                                                  (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))
+                                                                (or
+                                                                  (#{::hroutes/main-js ::hroutes/rand-all-fastest-cached}
+                                                                    (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho))))
+                                                                  (str/includes? patho "workbox-cdn")))
                                                :cache-first   (fn [patho]
                                                                 (= ::hroutes/rand-all-cached
                                                                    (:handler (bidi/match-route hroutes/routemap (clean-testing-route patho)))))}
