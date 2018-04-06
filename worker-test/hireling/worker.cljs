@@ -31,6 +31,23 @@
 
                            ; Name of the app. Used to create the cache name, along with the version number.
                            :app-name "hireling-test"
+                           ; A vec of routes to be precached. Note that if any of these URLs fail to cache, the service
+                           ; worker itself will fail to
+                           :precaching [{; URL that should be precached. Naturally, in order to
+                                         ; precache an asset, the url must be known ahead of time.
+                                         ; Thus, no functions or regex. Only strings.
+                                         :url "/index.html"
+                                         ; Version of the URL to cache. Should be incremented when the asset is changed.
+                                         ; Without a revision, the asset can never be updated.
+                                         :revision 1
+                                         ; If :add-route? is true, a handler will be registered that returns the pre-cached
+                                         ; asset. If false, another handler must be declared elsewhere.
+                                         :add-route? false}
+                                        {:url "/rand/precached.txt"
+                                         :revision 1
+                                         :add-route? true}]
+                           :precache-routing-opts {:directoryIndex "index.html"}
+
                            ; Takes a vector of maps that will be used to determine the service worker's caching behavior.
                            :cache-routes [{; Strategy the route will use to determine caches. Options
                                            ; are #{:cache-first :cache-only :network-first :network-only :stale-while-revalidate},
@@ -40,15 +57,16 @@
                                            ; the user will not be able to get the asset *at all*.
                                            :strategy :stale-while-revalidate
 
-                                           ; (Optional) options that modify the strategy. See
+                                           ; (Optional) Next three are options that modify the strategy. See
                                            ; https://developers.google.com/web/tools/workbox/reference-docs/latest/workbox.strategies
-                                           :strategy-options {; Name of cache to use for caching (both lookup and updating).
-                                                              ; If falsy, reverts to the main :cache-name
-                                                              :cache-name nil
-                                                              ; The maximum number of entries to store in a cache.
-                                                              :max-entries 1
-                                                              ; The maximum lifetime of a request to stay in the cache before it's removed.
-                                                              :max-age-seconds (* 60 60 2)}
+                                           ; Name of cache to use for caching (both lookup and updating).
+                                           ; Will have the :app-name as the prefix.
+                                           ; Will be  versioned with :version.
+                                           :cache-name nil
+                                           ; The maximum number of entries to store in a cache.
+                                           :max-entries 1
+                                           ; The maximum lifetime of a request to stay in the cache before it's removed.
+                                           :max-age-seconds (* 60 60 2)
                                            ; Route is a string, regex, or predicate function used to match a request
                                            ; to its cache entry and caching strategy.
                                            :route (bidi/path-for hroutes/routemap ::hroutes/fastest-cache-txt)
@@ -67,8 +85,10 @@
                                           {:strategy :stale-while-revalidate
                                            :route "/"}
                                           {:strategy :stale-while-revalidate
+                                           :cache-name "jscache"
                                            :route #".js"}
                                           {:strategy :stale-while-revalidate
+                                           :cache-name "csscache"
                                            :route #".css"}]
 
                            ; The :send-later option will handle POST and PUT requests, and accepts a map of

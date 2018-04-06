@@ -1,4 +1,4 @@
-(defproject hireling "0.5.0-ALPHA-SNAPSHOT"
+(defproject hireling "0.6.0-ALPHA-SNAPSHOT"
   :description "A clojurescript library for working with service workers."
   :url "https://github.com/Zaphodious/hireling"
   :license {:name "Eclipse Public License"

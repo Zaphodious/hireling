@@ -19,9 +19,12 @@ browser, intercepts network requests both to and from the page, and does
 things with those requests according to how its programmed. Principally,
 it can act as a proxy server that caches data for the user, so that
 network requests resolve faster, web sites are available offline, and PUT/POST
-requests retry in the background *after the user has closed the browser, even*,
+requests retry in the background *after the user has closed the browser*,
 should the user try one without being online. They even let you recieve push
 notifications with the browser closed!
+
+These things need to be programmed, however. They only do what you tell
+them to do.
 
 I recommend watching [Jake Archibald's Google I/O 2016 talk.](https://www.youtube.com/watch?v=cmGr0RszHc8)
 It fairly neatly explains it. Then check [Is Service Worker Ready](https://jakearchibald.github.io/isserviceworkerready/)
@@ -47,19 +50,26 @@ to dealing with, and they are absolute nightmares when it comes to errors.
 In short, they're a pain.
 
 The solution? Abstract over the service worker api, and make using one
-as simple as writing a configuration map. That's what this library does,
-without preventing enterprising developers from building on top of it.
+as simple as writing a configuration map. That's what this library does.
+Built on top of Google Workbox, this library allows developers to
+write simple and easy-to-validate clojurescript that runs at production
+time, alleviating the need to constantly recompile the service worker.
 
 # Testing and Development.
 
 ## Dev Environment
+
+Prerequisites - Leinigen 2 or higher, Java 1.8 or higher, most recent
+Chrome or Firefox, and an internet connection (due to Workbox being
+served over a CDN in the default lib config).
 
 Boot up a repl with the dev profile, run (user/start) or (user/reset), and open up
 http://localhost:3000 in whatever browser(s) you wish to test in.
 Assuming Chrome, open up devtools, go to the "Application" tab, check
 "Update on reload". Refresh the browser a few times until all tests
 show green. Any changes to the cljs files will trigger a recompile on
-page refresh.
+page refresh. Any change to dev (including gardener.clj or routes.cljc)
+require the changed namespaces to be reloaded, and (user/reset) to be run.
 
 ## Testing framework
 
@@ -106,12 +116,18 @@ are planned. There's plenty of refactoring to be done if nothing else.
 
 [![Clojars Project](https://img.shields.io/clojars/v/hireling.svg)](https://clojars.org/hireling)
 
+Requires [org.clojure/clojurescript "1.10.238"] or later.
+
 This walkthrough is going to assume that the app getting the shiny new service worker
 is one similar to what you get with lein new figwheel or lein new chestnut.
 If that's the case, there are a few things that need to be in place for service workers
 to work for us. Only two of them involve this library. Will there, possibly,
-be a lein plugin that handles this? No. lein-cljsbuild is more then
-sufficient.
+be a lein plugin that handles this? No. There are many means by which one
+can build Clojurescript. This library is intended to be useful to all of them.
+
+There may be a ring handler coming, however.
+
+Anyways...
 
 In the app's startup namespace, register the worker.
 ``` clojure
@@ -121,9 +137,10 @@ In the app's startup namespace, register the worker.
 ```
 Set up the compiler. Here's a Sample cljsbuild config that spits out a
 single js file, probably for deployment. Another can be found at dev/user/worker-js-builder in this repository.
-Note the :target :webworker. That's not so important for :optimizations :advanced, but
-for anything less its crucial and why the library requires
- [org.clojure/clojurescript "1.10.238"] or later.
+Note the :target :webworker. That's hugely important, as not only does it allow Google
+Closure to correctly eliminate dead code, but it also ensures that non-DOM
+bootstrapping code is included so that it will run in the first place.
+
 ``` clojure
 {:id "service-worker"
  :source-paths ["src-cljc" "src-worker"]
@@ -155,11 +172,9 @@ project leaves alpha and the api osifies the full documentation will exist
 either in this readme.md or in a wiki page.
 
 To get started, your
-:version should be 1, your :cache-name should be "myapp-cache", paths for your
-index.html, css files, and main.js file should be under :cached-paths :cache-fastest,
-and a function that identifies resource routes would do well under :cache-conditional
-:cache-fastest (if you can swing it). That alone will dramatically speed up return
-visits to your site.
+:version should be 1, your :app-name should be "myapp", paths for your
+index.html, css files, js files, and any necessary resources should be under :cache-routes,
+(for help, see hireling/worker.cljs).
 
 If all went well, you now have a bit of middleware that silently, without
 fanfare, and without *that* much configuration, improves your user's

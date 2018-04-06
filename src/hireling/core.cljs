@@ -63,16 +63,20 @@
       :network-first (.networkOnly strat s-opts)
       :network-only (.networkOnly strat s-opts))))
 
-(defn register-route! [{:keys [route strategy strategy-options method]}]
-  (let [handler-fn (handler-fn-for strategy strategy-options)]
+(defn make-cache-name [app-name cache-name version-number]
+  (str app-name "-" cache-name "-v" version-number))
+
+(defn register-route! [{:keys [route strategy strategy-options method cache-name app-name max-entries max-age-seconds version]}]
+  (let [updated-strat-opts {:cache-name (make-cache-name app-name cache-name version)
+                            :max-entries max-entries
+                            :max-age-seconds max-age-seconds}
+        handler-fn (handler-fn-for strategy updated-strat-opts)
+        made-cache-name (make-cache-name app-name cache-name version)]
     (println "registered route for " route " is "
       (-> js/workbox .-routing (.registerRoute route handler-fn (str/upper-case (if method (name method) "GET")))))))
 
 (defn- update-cache-name-as [cache-name]
   (fn [a] (update-in a [:strategy-options :cache-name] (fn [b] (if b b cache-name)))))
-
-(defn make-cache-name [app-name version-number]
-  (str "hireling-client." app-name ".v" version-number))
 
 
 (defn start-service-worker! [{:keys [workbox-uri workbox-uri-prefix cache-routes cache-name version
@@ -83,6 +87,10 @@
     (println "\uD83C\uDF88\uD83C\uDF88\uD83C\uDF88 These are " cache-entries)
     (set-cache-name-details! {:prefix app-name :suffix (str "v" version)
                               :precache "precache" :runtime "runtimecache"})
-    (doall (map register-route! cache-entries))))
+    (doall
+      (->> cache-entries
+        (map (fn [a] (assoc a :app-name app-name)))
+        (map (fn [a] (assoc a :version version)))
+        (map register-route!)))))
 
 

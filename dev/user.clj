@@ -105,7 +105,8 @@
                           ::hroutes/always-cache-txt rand-handler
                           ::hroutes/never-cache-txt rand-handler
                           ::hroutes/fastest-cache-txt rand-handler
-                          ::hroutes/rand-regex rand-handler))))
+                          ::hroutes/rand-regex rand-handler
+                          ::hroutes/precached rand-handler))))
 
 
 (defonce
