@@ -9,7 +9,9 @@
                     #{"" "index.html"} ::index
                     "style.css" ::style
                     "simple.txt" ::simple-txt
-                    "rand/" {"always-cached.txt" ::always-cache-txt
+                    "alt-index/" ::alt-index
+                    "rand/" {"" ::rand-index
+                             "always-cached.txt" ::always-cache-txt
                              "precached.txt" ::precached
                              "never-cached.txt" ::never-cache-txt
                              "cache-updates.txt" ::fastest-cache-txt

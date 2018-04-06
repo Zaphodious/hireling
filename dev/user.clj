@@ -14,18 +14,30 @@
    [:head
     [:meta {:charset "UTF-8"}]
     [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
-    [:link {:href "style.css" :rel "stylesheet" :type "text/css"}]
-    [:link {:href "style.css" :rel "preload" :as "style"}]
+    [:link {:href "/style.css" :rel "preload" :as "style"}]
+    [:link {:href "/style.css" :rel "stylesheet" :type "text/css"}]
     [:link {:href "/js/main.js" :rel "preload" :as "script"}]]
    [:body
     [:div {:id "app"}
      [:h2 "Pre-JS Template"]]
     [:script {:src "/js/main.js" :type "text/javascript"}]]])
 
+(rum/defc alt-home-page []
+  [:html
+   [:!DOCTYPE {"html" "html"}]
+   [:body
+    [:h1 "SHOULD NOT SHOW UP!"]]])
+
 (defn index-handler [request]
   {:status  200
    :headers {"Content-Type" "text/html"}
    :body    (rum/render-static-markup (home-page))})
+
+(defn alt-index-handler [request]
+  {:status  200
+   :headers {"Content-Type" "text/html"}
+   :body    (rum/render-static-markup (alt-home-page))})
+
 
 (defn style-handler [request]
   {:status  200
@@ -106,7 +118,9 @@
                           ::hroutes/never-cache-txt rand-handler
                           ::hroutes/fastest-cache-txt rand-handler
                           ::hroutes/rand-regex rand-handler
-                          ::hroutes/precached rand-handler))))
+                          ::hroutes/precached rand-handler
+                          ::hroutes/rand-index rand-handler
+                          ::hroutes/alt-index alt-index-handler))))
 
 
 (defonce

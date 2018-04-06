@@ -53,6 +53,14 @@
   (-> js/workbox .-precaching (.precacheAndRoute (clj->js path-vec)
                                                  (clj->js options-map))))
 
+(defn register-navigation-route! [{:keys [url cache-name blacklist whitelist]}]
+  (let [js-blacklist (if blacklist (clj->js blacklist) #js[])
+        js-whitelist (if whitelist (clj->js whitelist) #js[])
+        opts (into {:blacklist js-blacklist
+                    :whitelist js-whitelist}
+               (when cache-name {:cacheName cache-name}))]
+    (println "nav route is " (-> js/workbox .-routing (.registerNavigationRoute url (clj->js opts))))))
+
 (defn handler-fn-for [handler-key {:keys [cache-name max-entries max-age-seconds] :as strat-map}]
   (let [strat (.-strategies js/workbox)
         s-opts #js{:cacheName cache-name :cacheExpiration #js{:maxEntries max-entries :maxAgeSeconds max-age-seconds}}]
@@ -72,21 +80,26 @@
                             :max-age-seconds max-age-seconds}
         handler-fn (handler-fn-for strategy updated-strat-opts)
         made-cache-name (make-cache-name app-name cache-name version)]
-    (println "registered route for " route " is "
-      (-> js/workbox .-routing (.registerRoute route handler-fn (str/upper-case (if method (name method) "GET")))))))
+    (-> js/workbox .-routing (.registerRoute route handler-fn (str/upper-case (if method (name method) "GET"))))))
 
 (defn- update-cache-name-as [cache-name]
   (fn [a] (update-in a [:strategy-options :cache-name] (fn [b] (if b b cache-name)))))
 
 
 (defn start-service-worker! [{:keys [workbox-uri workbox-uri-prefix cache-routes cache-name version
-                                     app-name :as provided-impl-map]}]
+                                     app-name precaching precache-routing-opts navigation-route] :as provided-impl-map}]
   (enable-console-print!)
   (if workbox-uri (load-workbox workbox-uri workbox-uri-prefix) (load-workbox))
   (let [cache-entries cache-routes]
     (println "\uD83C\uDF88\uD83C\uDF88\uD83C\uDF88 These are " cache-entries)
     (set-cache-name-details! {:prefix app-name :suffix (str "v" version)
                               :precache "precache" :runtime "runtimecache"})
+    (println "is this an array? " (.isArray js/Array (clj->js [:hello])))
+    (println "precache entries are " (to-array precaching))
+    (println "precaching result is "
+             (when precaching (-> js/workbox (.-precaching) (.precache (clj->js precaching)))))
+    (when precache-routing-opts (-> js/workbox .-precaching .addRoute (clj->js precache-routing-opts)))
+    (when navigation-route (register-navigation-route! navigation-route))
     (doall
       (->> cache-entries
         (map (fn [a] (assoc a :app-name app-name)))

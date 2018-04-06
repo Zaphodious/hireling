@@ -36,16 +36,34 @@
                            :precaching [{; URL that should be precached. Naturally, in order to
                                          ; precache an asset, the url must be known ahead of time.
                                          ; Thus, no functions or regex. Only strings.
-                                         :url "/index.html"
+                                         :url "/"
                                          ; Version of the URL to cache. Should be incremented when the asset is changed.
                                          ; Without a revision, the asset can never be updated.
-                                         :revision 1
-                                         ; If :add-route? is true, a handler will be registered that returns the pre-cached
-                                         ; asset. If false, another handler must be declared elsewhere.
-                                         :add-route? false}
+                                         :revision 4}
+                                        {:url "/style.css"
+                                         :revision 1}
                                         {:url "/rand/precached.txt"
-                                         :revision 1
-                                         :add-route? true}]
+                                         :revision 1}]
+                           ; If a navigation route is provided, the cached asset will be returned when the user
+                           ; goes to a new page. If you're using a single html page, as is common for most
+                           ; ClojureScript projects, this is practically essential. Should be used with :precaching,
+                           ; as is shown with this example.
+                           :navigation-route {; URL to be called from the cache. Should be identical to one
+                                              ; provided in :precaching.
+                                              :url "/"
+                                              ; Optional. The name of the cache the asset is in. If falsy, the
+                                              ; precache name will be used.
+                                              :cache-name nil
+                                              ; Optional. If the navigation path matches a regex listed here, the
+                                              ; cached asset  will not be returned. Overrides the whitelist.
+                                              :blacklist [#"/rand/"]
+                                              ; Optional. Similar to the blacklist. If a route matches here and is not
+                                              ; canceled by the blacklist, the cached asset will be returned.
+                                              :whitelist [#"alt"]}
+
+                           ; A map of options as per https://developers.google.com/web/tools/workbox/reference-docs/latest/workbox.precaching#.addRoute
+                           ; If this map is null, no route will be created for precached assets. If this is the case
+                           ; then other routes will need to be created.
                            :precache-routing-opts {:directoryIndex "index.html"}
 
                            ; Takes a vector of maps that will be used to determine the service worker's caching behavior.
