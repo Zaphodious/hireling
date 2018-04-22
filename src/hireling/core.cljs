@@ -68,7 +68,7 @@
       :stale-while-revalidate (.staleWhileRevalidate strat s-opts)
       :cache-first (.cacheFirst strat s-opts)
       :cache-only (.cacheOnly strat s-opts)
-      :network-first (.networkOnly strat s-opts)
+      :network-first (.networkFirst strat s-opts)
       :network-only (.networkOnly strat s-opts))))
 
 (defn make-cache-name [app-name cache-name version-number]
